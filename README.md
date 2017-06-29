@@ -1,7 +1,7 @@
 # <img src="imgs/va-logo.png" width="200px" align="center" alt="VirtualAPK"/>
-[![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/didichuxing/VirtualAPK/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-0.9.0-red.svg)](https://github.com/didichuxing/VirtualAPK/releases)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/didichuxing/VirtualAPK/pulls)
+[![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/didi/VirtualAPK/blob/master/LICENSE)
+[![Release Version](https://img.shields.io/badge/release-0.9.0-red.svg)](https://github.com/didi/VirtualAPK/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/didi/VirtualAPK/pulls)
 
 VirtualAPK is a powerful but lightweight plugin framework for Android, it can load an apk file dynamically, then the loaded apk file which is called LoadedPlugin by us can be treated as applications installed.
 
@@ -91,9 +91,9 @@ virtualApk {
 ```
 # Develop guide
 
-1. See the [wiki](https://github.com/didichuxing/VirtualAPK/wiki)
-2. See the sample project [PluginDemo](https://github.com/didichuxing/VirtualAPK/tree/master/PluginDemo)
-3. Read the [source code](https://github.com/didichuxing/VirtualAPK/tree/master/CoreLibrary)
+1. See the [wiki](https://github.com/didi/VirtualAPK/wiki)
+2. See the sample project [PluginDemo](https://github.com/didi/VirtualAPK/tree/master/PluginDemo)
+3. Read the [source code](https://github.com/didi/VirtualAPK/tree/master/CoreLibrary)
 
 # Known issues
 - not support notifications with custom layout in plugin
