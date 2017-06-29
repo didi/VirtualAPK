@@ -1,0 +1,52 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.didi.virtualapk.host'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "com.didi.virtualapk"
+        minSdkVersion 15
+        targetSdkVersion 15
+        versionCode 3
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("../keystore/test.keystore")
+            storePassword "test123456"
+            keyAlias "test"
+            keyPassword "test123456"
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+
+    compile 'com.didi.virtualapk:core:0.9.0'
+
+    //compile project (":CoreLibrary")
+
+}

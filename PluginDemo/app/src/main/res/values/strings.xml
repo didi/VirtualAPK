@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Chapter_2</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_messenger">MessengerActivity</string>
+    <string name="title_activity_book_manager">BookManagerActivity</string>
+    <string name="title_activity_provider">ProviderActivity</string>
+    <string name="title_activity_tcpserver">TCPServerActivity</string>
+    <string name="title_activity_tcpclient">TCPClientActivity</string>
+    <string name="title_activity_binder_pool">BinderPoolActivity</string>
+
+</resources>

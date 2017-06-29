@@ -1,0 +1,63 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.didi.virtualapk.core">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application>
+        <!-- Stub Activities -->
+        <activity android:name=".A$1" android:launchMode="standard"/>
+        <activity android:name=".A$2" android:launchMode="standard"
+            android:theme="@android:style/Theme.Translucent" />
+
+        <!-- Stub Activities -->
+        <activity android:name=".B$1" android:launchMode="singleTop"/>
+        <activity android:name=".B$2" android:launchMode="singleTop"/>
+        <activity android:name=".B$3" android:launchMode="singleTop"/>
+        <activity android:name=".B$4" android:launchMode="singleTop"/>
+        <activity android:name=".B$5" android:launchMode="singleTop"/>
+        <activity android:name=".B$6" android:launchMode="singleTop"/>
+        <activity android:name=".B$7" android:launchMode="singleTop"/>
+        <activity android:name=".B$8" android:launchMode="singleTop"/>
+
+        <!-- Stub Activities -->
+        <activity android:name=".C$1" android:launchMode="singleTask"/>
+        <activity android:name=".C$2" android:launchMode="singleTask"/>
+        <activity android:name=".C$3" android:launchMode="singleTask"/>
+        <activity android:name=".C$4" android:launchMode="singleTask"/>
+        <activity android:name=".C$5" android:launchMode="singleTask"/>
+        <activity android:name=".C$6" android:launchMode="singleTask"/>
+        <activity android:name=".C$7" android:launchMode="singleTask"/>
+        <activity android:name=".C$8" android:launchMode="singleTask"/>
+
+        <!-- Stub Activities -->
+        <activity android:name=".D$1" android:launchMode="singleInstance"/>
+        <activity android:name=".D$2" android:launchMode="singleInstance"/>
+        <activity android:name=".D$3" android:launchMode="singleInstance"/>
+        <activity android:name=".D$4" android:launchMode="singleInstance"/>
+        <activity android:name=".D$5" android:launchMode="singleInstance"/>
+        <activity android:name=".D$6" android:launchMode="singleInstance"/>
+        <activity android:name=".D$7" android:launchMode="singleInstance"/>
+        <activity android:name=".D$8" android:launchMode="singleInstance"/>
+
+        <!-- Local Service running in main process -->
+        <service android:name="com.didi.virtualapk.delegate.LocalService" />
+
+        <!-- Daemon Service running in child process -->
+        <service android:name="com.didi.virtualapk.delegate.RemoteService" android:process=":daemon">
+            <intent-filter>
+                <action android:name="${applicationId}.intent.ACTION_DAEMON_SERVICE" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name="com.didi.virtualapk.delegate.RemoteContentProvider"
+            android:authorities="${applicationId}.VirtualAPK.Provider"
+            android:process=":daemon" />
+
+    </application>
+
+</manifest>
