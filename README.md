@@ -50,7 +50,7 @@ Initialize `PluginManager` in `YourApplication::attachBaseContext()`.
 @Override
 protected void attachBaseContext(Context base) {
     super.attachBaseContext(base);
-    PluginManager.getInstance(base).init();
+    PluginManager.getInstance().init(base);
 }
 ```
 
@@ -69,8 +69,7 @@ Finally, load an APK and have fun!
 
 ``` java
 String pluginPath = Environment.getExternalStorageDirectory().getAbsolutePath().concat("/Test.apk");
-File plugin = new File(pluginPath);
-PluginManager.getInstance(base).loadPlugin(plugin);
+PluginManager.getInstance().loadPlugin(pluginPath);
 
 // Given "com.didi.virtualapk.demo" is the package name of plugin APK, 
 // and there is an activity called `MainActivity`.

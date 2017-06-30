@@ -58,7 +58,7 @@ public class PluginContentResolver extends ContentResolver {
     public PluginContentResolver(Context context) {
         super(context);
         mBase = context.getContentResolver();
-        mPluginManager = PluginManager.getInstance(context);
+        mPluginManager = PluginManager.getInstance();
     }
 
     protected IContentProvider acquireProvider(Context context, String auth) {
