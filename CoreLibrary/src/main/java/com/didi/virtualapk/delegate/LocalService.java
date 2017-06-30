@@ -65,7 +65,7 @@ public class LocalService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mPluginManager = PluginManager.getInstance(this);
+        mPluginManager = PluginManager.getInstance();
     }
 
     @Override

@@ -23,14 +23,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.Keep;
 import android.text.TextUtils;
 import android.view.ContextThemeWrapper;
 
@@ -46,10 +43,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -76,7 +69,7 @@ public class PluginUtil {
     }
 
     public static int getTheme(Context context, ComponentName component) {
-        LoadedPlugin loadedPlugin = PluginManager.getInstance(context).getLoadedPlugin(component);
+        LoadedPlugin loadedPlugin = PluginManager.getInstance().getLoadedPlugin(component);
 
         if (null == loadedPlugin) {
             return 0;
@@ -136,7 +129,7 @@ public class PluginUtil {
         // designed for 5.0 - only, but some bad phones not work, eg:letv
         try {
             Context base = activity.getBaseContext();
-            final LoadedPlugin plugin = PluginManager.getInstance(activity).getLoadedPlugin(packageName);
+            final LoadedPlugin plugin = PluginManager.getInstance().getLoadedPlugin(packageName);
             final Resources resources = plugin.getResources();
             if (resources != null) {
                 ReflectUtil.setField(base.getClass(), base, "mResources", resources);

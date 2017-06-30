@@ -20,7 +20,6 @@ import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.OperationApplicationException;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
@@ -62,7 +61,7 @@ public class RemoteContentProvider extends ContentProvider {
     }
 
     private ContentProvider getContentProvider(final Uri uri) {
-        final PluginManager pluginManager = PluginManager.getInstance(getContext());
+        final PluginManager pluginManager = PluginManager.getInstance();
         Uri pluginUri = Uri.parse(uri.getQueryParameter(KEY_URI));
         final String auth = pluginUri.getAuthority();
         ContentProvider cachedProvider = sCachedProviders.get(auth);

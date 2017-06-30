@@ -31,11 +31,11 @@ import android.net.Uri;
 import android.util.Log;
 import android.util.Singleton;
 
-import com.didi.virtualapk.delegate.IContentProviderProxy;
-import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.delegate.ActivityManagerProxy;
+import com.didi.virtualapk.delegate.IContentProviderProxy;
 import com.didi.virtualapk.internal.ComponentsHandler;
 import com.didi.virtualapk.internal.LoadedPlugin;
+import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.internal.VAInstrumentation;
 import com.didi.virtualapk.utils.PluginUtil;
 import com.didi.virtualapk.utils.ReflectUtil;
@@ -68,34 +68,34 @@ public class PluginManager {
     private IActivityManager mActivityManager; // Hooked IActivityManager binder
     private IContentProvider mIContentProvider; // Hooked IContentProvider binder
 
-    public static PluginManager getInstance(Context base) {
+    public static PluginManager getInstance() {
         if (sInstance == null) {
             synchronized (PluginManager.class) {
                 if (sInstance == null)
-                    sInstance = new PluginManager(base);
+                    sInstance = new PluginManager();
             }
         }
 
         return sInstance;
     }
 
-    private PluginManager(Context context) {
+    private PluginManager() {}
+
+    /**
+     * initialize the Plugin Manager, You must call this is method before you use this framework !
+     * @param context
+     */
+    public void init(Context context) {
         Context app = context.getApplicationContext();
         if (app == null) {
             this.mContext = context;
         } else {
             this.mContext = ((Application)app).getBaseContext();
         }
-        prepare();
-    }
-
-    private void prepare() {
         Systems.sHostContext = getHostContext();
         this.hookInstrumentationAndHandler();
         this.hookSystemServices();
-    }
 
-    public void init() {
         mComponentsHandler = new ComponentsHandler(this);
         RunUtil.getThreadPool().execute(new Runnable() {
             @Override

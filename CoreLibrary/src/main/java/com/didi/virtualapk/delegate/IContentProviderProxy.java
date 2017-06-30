@@ -95,7 +95,7 @@ public class IContentProviderProxy implements InvocationHandler {
             return;
         }
 
-        PluginManager pluginManager = PluginManager.getInstance(mContext);
+        PluginManager pluginManager = PluginManager.getInstance();
         ProviderInfo info = pluginManager.resolveContentProvider(uri.getAuthority(), 0);
         if (info != null) {
             String pkg = info.packageName;

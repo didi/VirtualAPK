@@ -45,10 +45,10 @@ public class RemoteService extends LocalService {
         if (target != null) {
             String pluginLocation = intent.getStringExtra(EXTRA_PLUGIN_LOCATION);
             ComponentName component = target.getComponent();
-            LoadedPlugin plugin = PluginManager.getInstance(this).getLoadedPlugin(component);
+            LoadedPlugin plugin = PluginManager.getInstance().getLoadedPlugin(component);
             if (plugin == null && pluginLocation != null) {
                 try {
-                    PluginManager.getInstance(this).loadPlugin(new File(pluginLocation));
+                    PluginManager.getInstance().loadPlugin(new File(pluginLocation));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

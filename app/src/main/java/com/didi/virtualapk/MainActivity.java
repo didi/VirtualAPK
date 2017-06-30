@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     public void onButtonClick(View v) {
         if (v.getId() == R.id.button) {
             final String pkg = "com.didi.virtualapk.demo";
-            if (PluginManager.getInstance(this).getLoadedPlugin(pkg) == null) {
+            if (PluginManager.getInstance().getLoadedPlugin(pkg) == null) {
                 Toast.makeText(this, "plugin [com.didi.virtualapk.demo] not loaded", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
             // test ContentProvider
             Uri bookUri = Uri.parse("content://com.didi.virtualapk.demo.book.provider/book");
-            LoadedPlugin plugin = PluginManager.getInstance(this).getLoadedPlugin(pkg);
+            LoadedPlugin plugin = PluginManager.getInstance().getLoadedPlugin(pkg);
             bookUri = PluginContentResolver.wrapperUri(plugin, bookUri);
 
             Cursor bookCursor = getContentResolver().query(bookUri, new String[]{"_id", "name"}, null, null, null);
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadPlugin(Context base) {
-        PluginManager pluginManager = PluginManager.getInstance(base);
+        PluginManager pluginManager = PluginManager.getInstance();
         File apk = new File(Environment.getExternalStorageDirectory(), "Test.apk");
         if (apk.exists()) {
             try {

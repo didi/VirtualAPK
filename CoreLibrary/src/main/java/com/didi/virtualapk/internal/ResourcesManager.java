@@ -47,7 +47,7 @@ class ResourcesManager {
                 assetManager = hostResources.getAssets();
             }
             ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", apk);
-            List<LoadedPlugin> pluginList = PluginManager.getInstance(hostContext).getAllLoadedPlugins();
+            List<LoadedPlugin> pluginList = PluginManager.getInstance().getAllLoadedPlugins();
             for (LoadedPlugin plugin : pluginList) {
                 ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", plugin.getLocation());
             }
