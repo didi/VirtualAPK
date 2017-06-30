@@ -187,6 +187,15 @@ public class PluginManager {
 
     /**
      * load a plugin into memory, then invoke it's Application.
+     * @param apkPath the path of plugin, should end with .apk
+     * @throws Exception
+     */
+    public void loadPlugin(String apkPath) throws Exception {
+        loadPlugin(new File(apkPath));
+    }
+
+    /**
+     * load a plugin into memory, then invoke it's Application.
      * @param apk the file of plugin, should end with .apk
      * @throws Exception
      */

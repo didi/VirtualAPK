@@ -19,11 +19,10 @@ package com.didi.virtualapk.delegate;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.IBinder;
+import android.text.TextUtils;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.LoadedPlugin;
-
-import java.io.File;
 
 /**
  * @author johnsonlee
@@ -43,12 +42,12 @@ public class RemoteService extends LocalService {
 
         Intent target = intent.getParcelableExtra(EXTRA_TARGET);
         if (target != null) {
-            String pluginLocation = intent.getStringExtra(EXTRA_PLUGIN_LOCATION);
+            String pluginPath = intent.getStringExtra(EXTRA_PLUGIN_LOCATION);
             ComponentName component = target.getComponent();
             LoadedPlugin plugin = PluginManager.getInstance().getLoadedPlugin(component);
-            if (plugin == null && pluginLocation != null) {
+            if (plugin == null && !TextUtils.isEmpty(pluginPath)) {
                 try {
-                    PluginManager.getInstance().loadPlugin(new File(pluginLocation));
+                    PluginManager.getInstance().loadPlugin(pluginPath);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

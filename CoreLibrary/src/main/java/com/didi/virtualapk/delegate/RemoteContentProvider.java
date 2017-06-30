@@ -32,7 +32,6 @@ import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.utils.RunUtil;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,7 +72,7 @@ public class RemoteContentProvider extends ContentProvider {
             LoadedPlugin plugin = pluginManager.getLoadedPlugin(uri.getQueryParameter(KEY_PKG));
             if (plugin == null) {
                 try {
-                    pluginManager.loadPlugin(new File(uri.getQueryParameter(KEY_PLUGIN)));
+                    pluginManager.loadPlugin(uri.getQueryParameter(KEY_PLUGIN));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

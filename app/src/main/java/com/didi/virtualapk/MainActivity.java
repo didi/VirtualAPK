@@ -70,15 +70,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadPlugin(Context base) {
-        PluginManager pluginManager = PluginManager.getInstance();
-        File apk = new File(Environment.getExternalStorageDirectory(), "Test.apk");
-        if (apk.exists()) {
             try {
-                pluginManager.loadPlugin(apk);
+                String apkPath = Environment.getExternalStorageDirectory() + File.separator +  "Test.apk" ;
+                PluginManager.getInstance().loadPlugin(apkPath);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
     }
 
     private void showAbout() {
