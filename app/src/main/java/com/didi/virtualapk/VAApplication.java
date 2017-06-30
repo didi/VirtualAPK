@@ -13,7 +13,7 @@ public class VAApplication extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         long start = System.currentTimeMillis();
-        PluginManager.getInstance(base).init();
+        PluginManager.getInstance().init(base);
         Log.d("ryg", "use time:" + (System.currentTimeMillis() - start));
     }
 
