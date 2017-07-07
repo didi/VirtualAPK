@@ -29,6 +29,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
+import android.view.Window;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.utils.PluginUtil;
@@ -132,6 +133,11 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 if (activityInfo.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
                     activity.setRequestedOrientation(activityInfo.screenOrientation);
                 }
+                
+                //set windowSoftInputMode
+                Window window = activity.getWindow();
+                window.setSoftInputMode(activityInfo.softInputMode);
+                
             } catch (Exception e) {
                 e.printStackTrace();
             }
