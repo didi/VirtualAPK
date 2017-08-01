@@ -187,14 +187,8 @@ public class PluginUtil {
         }
     }
 
-    public static void copyNativeLib(File apk, Context context, PackageInfo packageInfo, File nativeLibDir) {
+    public static void copyNativeLib(File apk, String cpuArch, Context context, PackageInfo packageInfo, File nativeLibDir) {
         try {
-            String cpuArch;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                cpuArch = Build.SUPPORTED_ABIS[0];
-            } else {
-                cpuArch = Build.CPU_ABI;
-            }
             boolean findSo = false;
 
             ZipFile zipfile = new ZipFile(apk.getAbsolutePath());
