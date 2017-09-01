@@ -108,7 +108,7 @@ public final class LoadedPlugin {
     @WorkerThread
     private static Resources createResources(Context context, File apk) {
         if (Constants.COMBINE_RESOURCES) {
-            Resources resources = new ResourcesManager().createResources(context, apk.getAbsolutePath());
+            Resources resources = ResourcesManager.createResources(context, apk.getAbsolutePath());
             ResourcesManager.hookResources(context, resources);
             return resources;
         } else {
