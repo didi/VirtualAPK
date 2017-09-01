@@ -18,6 +18,7 @@ package com.didi.virtualapk.internal;
 
 import android.app.Activity;
 import android.app.Instrumentation;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -81,6 +82,9 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                     "execStartActivity", parameterTypes,
                     who, contextThread, token, target, intent, requestCode, options);
         } catch (Exception e) {
+            if (e.getCause() instanceof ActivityNotFoundException) {
+                throw (ActivityNotFoundException) e.getCause();
+            }
             e.printStackTrace();
         }
 
