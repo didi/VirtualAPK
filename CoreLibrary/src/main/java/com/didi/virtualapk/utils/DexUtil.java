@@ -93,12 +93,17 @@ public class DexUtil {
             Object allNativeLibraryPathElements = Array.newInstance(elementClass, baseArrayLength + 1);
             System.arraycopy(baseNativeLibraryPathElements, 0, allNativeLibraryPathElements, 0, baseArrayLength);
 
-            Field dirField = elementClass.getDeclaredField("dir");
-            dirField.setAccessible(true);
+            Field soPathField;
+            if (Build.VERSION.SDK_INT >= 26) {
+                soPathField = elementClass.getDeclaredField("path");
+            } else {
+                soPathField = elementClass.getDeclaredField("dir");
+            }
+            soPathField.setAccessible(true);
             final int newArrayLength = Array.getLength(newNativeLibraryPathElements);
             for (int i = 0; i < newArrayLength; i++) {
                 Object element = Array.get(newNativeLibraryPathElements, i);
-                String dir = ((File)dirField.get(element)).getAbsolutePath();
+                String dir = ((File)soPathField.get(element)).getAbsolutePath();
                 if (dir.contains(Constants.NATIVE_DIR)) {
                     Array.set(allNativeLibraryPathElements, baseArrayLength, element);
                     break;

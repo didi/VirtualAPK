@@ -16,6 +16,7 @@
 
 package com.didi.virtualapk;
 
+import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
 import android.app.ActivityThread;
 import android.app.Application;
@@ -28,6 +29,7 @@ import android.content.Intent;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 import android.util.Singleton;
 
@@ -92,7 +94,11 @@ public class PluginManager {
     private void prepare() {
         Systems.sHostContext = getHostContext();
         this.hookInstrumentationAndHandler();
-        this.hookSystemServices();
+        if (Build.VERSION.SDK_INT >= 26) {
+            this.hookAMSForO();
+        } else {
+            this.hookSystemServices();
+        }
     }
 
     public void init() {
@@ -122,6 +128,17 @@ public class PluginManager {
             if (defaultSingleton.get() == activityManagerProxy) {
                 this.mActivityManager = activityManagerProxy;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void hookAMSForO() {
+        try {
+            Singleton<IActivityManager> defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManager.class, null, "IActivityManagerSingleton");
+            IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
+            ReflectUtil.setField(defaultSingleton.getClass().getSuperclass(), defaultSingleton, "mInstance", activityManagerProxy);
         } catch (Exception e) {
             e.printStackTrace();
         }
