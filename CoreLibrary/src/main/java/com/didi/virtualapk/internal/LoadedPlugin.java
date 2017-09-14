@@ -129,7 +129,6 @@ public final class LoadedPlugin {
     private final File mNativeLibDir;
     private final PackageParser.Package mPackage;
     private final PackageInfo mPackageInfo;
-    private AssetManager mAssets;
     private Resources mResources;
     private ClassLoader mClassLoader;
     private PluginPackageManager mPackageManager;
@@ -164,7 +163,6 @@ public final class LoadedPlugin {
         this.mPluginContext = new PluginContext(this);
         this.mNativeLibDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
         this.mResources = createResources(context, apk);
-        this.mAssets = this.mResources.getAssets();
         this.mClassLoader = createClassLoader(context, apk, this.mNativeLibDir, context.getClassLoader());
 
         tryToCopyNativeLib(apk);
@@ -242,11 +240,15 @@ public final class LoadedPlugin {
     }
 
     public AssetManager getAssets() {
-        return this.mAssets;
+        return getResources().getAssets();
     }
 
     public Resources getResources() {
         return this.mResources;
+    }
+
+    public void updateResources(Resources newResources) {
+        this.mResources = newResources;
     }
 
     public ClassLoader getClassLoader() {
@@ -490,8 +492,8 @@ public final class LoadedPlugin {
         ComponentName source = component.getComponentName();
         if (source == target) return true;
         if (source != null && target != null
-            && source.getClassName().equals(target.getClassName())
-            && (source.getPackageName().equals(target.getPackageName())
+                && source.getClassName().equals(target.getClassName())
+                && (source.getPackageName().equals(target.getPackageName())
                 || mHostContext.getPackageName().equals(target.getPackageName()))) {
             return true;
         }
@@ -1199,7 +1201,7 @@ public final class LoadedPlugin {
             Object uid = ReflectUtil.invokeNoException(PackageManager.class, mHostPackageManager, "getPackageUid",
                     new Class[]{String.class, int.class}, s, i);
             if (uid != null) {
-                return (int)uid;
+                return (int) uid;
             } else {
                 throw new NameNotFoundException(s);
             }
