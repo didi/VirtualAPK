@@ -63,6 +63,10 @@ class ResourcesManager {
                 // is raw android resources
                 newResources = new Resources(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
             }
+            // lastly, sync all LoadedPlugin to newResources
+            for (LoadedPlugin plugin : pluginList) {
+                plugin.updateResources(newResources);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -72,10 +76,6 @@ class ResourcesManager {
     }
 
     public static void hookResources(Context base, Resources resources) {
-        if (Build.VERSION.SDK_INT >= 24) {
-            return;
-        }
-
         try {
             ReflectUtil.setField(base.getClass(), base, "mResources", resources);
             Object loadedApk = ReflectUtil.getPackageInfo(base);
@@ -83,9 +83,17 @@ class ResourcesManager {
 
             Object activityThread = ReflectUtil.getActivityThread(base);
             Object resManager = ReflectUtil.getField(activityThread.getClass(), activityThread, "mResourcesManager");
-            Map<Object, WeakReference<Resources>> map = (Map<Object, WeakReference<Resources>>) ReflectUtil.getField(resManager.getClass(), resManager, "mActiveResources");
-            Object key = map.keySet().iterator().next();
-            map.put(key, new WeakReference<>(resources));
+            if (Build.VERSION.SDK_INT < 24) {
+                Map<Object, WeakReference<Resources>> map = (Map<Object, WeakReference<Resources>>) ReflectUtil.getField(resManager.getClass(), resManager, "mActiveResources");
+                Object key = map.keySet().iterator().next();
+                map.put(key, new WeakReference<>(resources));
+            } else {
+                // still hook Android N Resources, even though it's unnecessary, then nobody will be strange.
+                Map map = (Map) ReflectUtil.getFieldNoException(resManager.getClass(), resManager, "mResourceImpls");
+                Object key = map.keySet().iterator().next();
+                Object resourcesImpl = ReflectUtil.getFieldNoException(Resources.class, resources, "mResourcesImpl");
+                map.put(key, new WeakReference<>(resourcesImpl));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -110,7 +118,7 @@ class ResourcesManager {
     private static final class MiUiResourcesCompat {
         private static Resources createResources(Resources hostResources, AssetManager assetManager) throws Exception {
             Class resourcesClazz = Class.forName("android.content.res.MiuiResources");
-            Resources newResources = (Resources)ReflectUtil.invokeConstructor(resourcesClazz,
+            Resources newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
                     new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
                     new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
             return newResources;
@@ -120,7 +128,7 @@ class ResourcesManager {
     private static final class VivoResourcesCompat {
         private static Resources createResources(Context hostContext, Resources hostResources, AssetManager assetManager) throws Exception {
             Class resourcesClazz = Class.forName("android.content.res.VivoResources");
-            Resources newResources = (Resources)ReflectUtil.invokeConstructor(resourcesClazz,
+            Resources newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
                     new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
                     new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
             ReflectUtil.invokeNoException(resourcesClazz, newResources, "init",
@@ -134,7 +142,7 @@ class ResourcesManager {
     private static final class NubiaResourcesCompat {
         private static Resources createResources(Resources hostResources, AssetManager assetManager) throws Exception {
             Class resourcesClazz = Class.forName("android.content.res.NubiaResources");
-            Resources newResources = (Resources)ReflectUtil.invokeConstructor(resourcesClazz,
+            Resources newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
                     new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
                     new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
             return newResources;

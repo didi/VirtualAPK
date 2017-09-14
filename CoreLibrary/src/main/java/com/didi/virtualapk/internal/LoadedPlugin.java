@@ -108,7 +108,7 @@ public final class LoadedPlugin {
     @WorkerThread
     private static Resources createResources(Context context, File apk) {
         if (Constants.COMBINE_RESOURCES) {
-            Resources resources = new ResourcesManager().createResources(context, apk.getAbsolutePath());
+            Resources resources = ResourcesManager.createResources(context, apk.getAbsolutePath());
             ResourcesManager.hookResources(context, resources);
             return resources;
         } else {
@@ -129,7 +129,6 @@ public final class LoadedPlugin {
     private final File mNativeLibDir;
     private final PackageParser.Package mPackage;
     private final PackageInfo mPackageInfo;
-    private AssetManager mAssets;
     private Resources mResources;
     private ClassLoader mClassLoader;
     private PluginPackageManager mPackageManager;
@@ -164,7 +163,6 @@ public final class LoadedPlugin {
         this.mPluginContext = new PluginContext(this);
         this.mNativeLibDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
         this.mResources = createResources(context, apk);
-        this.mAssets = this.mResources.getAssets();
         this.mClassLoader = createClassLoader(context, apk, this.mNativeLibDir, context.getClassLoader());
 
         tryToCopyNativeLib(apk);
@@ -242,11 +240,15 @@ public final class LoadedPlugin {
     }
 
     public AssetManager getAssets() {
-        return this.mAssets;
+        return getResources().getAssets();
     }
 
     public Resources getResources() {
         return this.mResources;
+    }
+
+    public void updateResources(Resources newResources) {
+        this.mResources = newResources;
     }
 
     public ClassLoader getClassLoader() {
@@ -400,7 +402,7 @@ public final class LoadedPlugin {
         ContentResolver resolver = this.mPluginContext.getContentResolver();
 
         for (PackageParser.Activity activity : this.mPackage.activities) {
-            if (activity.getComponentName().equals(component)) {
+            if (match(activity, component)) {
                 ResolveInfo resolveInfo = new ResolveInfo();
                 resolveInfo.activityInfo = activity.info;
                 resolveInfos.add(resolveInfo);
@@ -436,7 +438,7 @@ public final class LoadedPlugin {
         ContentResolver resolver = this.mPluginContext.getContentResolver();
 
         for (PackageParser.Service service : this.mPackage.services) {
-            if (service.getComponentName().equals(component)) {
+            if (match(service, component)) {
                 ResolveInfo resolveInfo = new ResolveInfo();
                 resolveInfo.serviceInfo = service.info;
                 resolveInfos.add(resolveInfo);
@@ -484,6 +486,18 @@ public final class LoadedPlugin {
 
     public ProviderInfo resolveContentProvider(String name, int flags) {
         return this.mProviders.get(name);
+    }
+
+    private boolean match(PackageParser.Component component, ComponentName target) {
+        ComponentName source = component.getComponentName();
+        if (source == target) return true;
+        if (source != null && target != null
+                && source.getClassName().equals(target.getClassName())
+                && (source.getPackageName().equals(target.getPackageName())
+                || mHostContext.getPackageName().equals(target.getPackageName()))) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1187,7 +1201,7 @@ public final class LoadedPlugin {
             Object uid = ReflectUtil.invokeNoException(PackageManager.class, mHostPackageManager, "getPackageUid",
                     new Class[]{String.class, int.class}, s, i);
             if (uid != null) {
-                return (int)uid;
+                return (int) uid;
             } else {
                 throw new NameNotFoundException(s);
             }

@@ -42,10 +42,10 @@ class PluginContext extends ContextWrapper {
         return this.mPlugin.getApplication();
     }
 
-    @Override
-    public ApplicationInfo getApplicationInfo() {
-        return this.mPlugin.getApplicationInfo();
-    }
+//    @Override
+//    public ApplicationInfo getApplicationInfo() {
+//        return this.mPlugin.getApplicationInfo();
+//    }
 
     private Context getHostContext() {
         return getBaseContext();
@@ -61,20 +61,20 @@ class PluginContext extends ContextWrapper {
         return this.mPlugin.getClassLoader();
     }
 
-    @Override
-    public String getPackageName() {
-        return this.mPlugin.getPackageName();
-    }
+//    @Override
+//    public String getPackageName() {
+//        return this.mPlugin.getPackageName();
+//    }
 
-    @Override
-    public String getPackageResourcePath() {
-        return this.mPlugin.getPackageResourcePath();
-    }
+//    @Override
+//    public String getPackageResourcePath() {
+//        return this.mPlugin.getPackageResourcePath();
+//    }
 
-    @Override
-    public String getPackageCodePath() {
-        return this.mPlugin.getCodePath();
-    }
+//    @Override
+//    public String getPackageCodePath() {
+//        return this.mPlugin.getCodePath();
+//    }
 
     @Override
     public PackageManager getPackageManager() {

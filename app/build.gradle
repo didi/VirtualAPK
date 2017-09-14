@@ -45,7 +45,7 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
 
-    compile 'com.didi.virtualapk:core:0.9.0'
+    compile 'com.didi.virtualapk:core:0.9.1'
 
     //compile project (":CoreLibrary")
 

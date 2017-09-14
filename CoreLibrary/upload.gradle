@@ -11,7 +11,7 @@ def gitUrl = 'https://github.com/didi/VirtualAPK' // Git仓库的url
 group = GROUP_ID
 archivesBaseName = 'core'
 
-version = "0.9.0"
+version = "0.9.1"
 
 
 install {

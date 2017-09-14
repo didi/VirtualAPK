@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
             // test Activity and Service
             Intent intent = new Intent();
-            intent.setClassName(pkg, "com.didi.virtualapk.demo.aidl.BookManagerActivity");
+            intent.setClassName(this, "com.didi.virtualapk.demo.aidl.BookManagerActivity");
             startActivity(intent);
 
             // test ContentProvider
