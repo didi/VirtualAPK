@@ -1,6 +1,7 @@
 package com.didi.virtualapk;
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -14,6 +15,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.didi.base.model.Dog;
 import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.internal.LoadedPlugin;
 
@@ -68,6 +70,17 @@ public class MainActivity extends AppCompatActivity {
             showAbout();
         }
     }
+
+
+
+    public void onBtnStartServiceClick(View v) {
+        Intent intent=new Intent();
+        intent.setClassName(this,"com.didi.virtualapk.demo.service.MyService");
+        intent.putExtra("dog",new Dog("long"));
+        startService(intent);
+
+    }
+
 
     private void loadPlugin(Context base) {
         PluginManager pluginManager = PluginManager.getInstance(base);
