@@ -22,9 +22,6 @@ repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
-    maven {
-        url 'http://maven.intra.xiaojukeji.com/nexus/content/groups/public/'
-    }
 }
 
 configurations {
