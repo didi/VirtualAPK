@@ -39,6 +39,8 @@ dependencies {
     // but, wo can still visit their Class and Resources.
     compile 'com.android.support:appcompat-v7:22.2.0'
     compile 'com.didi.virtualapk:core:0.9.1'
+
+    compile project(':base')
 }
 
 apply plugin: 'com.didi.virtualapk.plugin'

@@ -144,6 +144,10 @@
                 <category android:name="android.intent.category._LAUNCHER" />
             </intent-filter>
         </activity>
+
+
+        <service android:name=".service.MyService"/>
+
     </application>
 
 </manifest>
