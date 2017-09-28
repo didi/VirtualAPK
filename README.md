@@ -28,7 +28,7 @@ Add a dependency in `build.gradle` in root of host project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.0'
+    classpath 'com.didi.virtualapk:gradle:0.9.1'
 }
 ```
 
