@@ -1,0 +1,50 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+
+tasks.withType(GroovyCompile) {
+    sourceCompatibility = '1.7'
+    targetCompatibility = '1.7'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+}
+
+configurations {
+    provided
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+    }
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile 'com.google.guava:guava:19.0'
+    compile 'commons-io:commons-io:1.4'
+    compile 'commons-codec:commons-codec:1.6'
+    compile 'org.ow2.asm:asm:4.0'
+    compile 'org.javassist:javassist:3.18.2-GA'
+    compile 'com.android.tools.build:gradle:2.1.3'
+}
+
+
+
+apply from: 'upload.gradle'

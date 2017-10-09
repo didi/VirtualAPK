@@ -1,0 +1,75 @@
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+
+def siteUrl = 'https://github.com/didi/VirtualAPK' // 项目的主页
+def gitUrl = 'https://github.com/didi/VirtualAPK' // Git仓库的url
+
+group = GROUP_ID
+archivesBaseName = 'gradle'
+version = VERSION
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            artifactId = ARTIFACT_ID
+
+            project {
+                packaging 'aar'
+                // Add your description here
+                name 'A powerful but lightweight plugin framework for Android' //项目描述
+                url siteUrl
+                // Set your license
+                licenses {
+                    license {
+                        name 'Apache License 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'zhengtao'    //填写的一些基本信息
+                        name 'DiDi'
+                        email 'zhengtao@didichuxing.com'
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from groovydoc.destinationDir
+}
+artifacts {
+    //archives javadocJar
+    archives sourcesJar
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['archives']
+    pkg {
+        repo = "maven"
+        name = "${GROUP_ID}:${ARTIFACT_ID}"    //发布到JCenter上的项目名字
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+
+}
