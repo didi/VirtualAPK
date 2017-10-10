@@ -25,3 +25,5 @@
 ##### 5. 现在 VirtualAPK 将开始 hook Android N 的 Resources 对象，尽管这个改动是多余的。事实上，从Android L开始，仅仅替换ContextImpl和PluginContext中的资源就可以满足绝大多数使用场景，为了避免开发者心存疑问，我们统一了这一行为，任何版本都hook资源。
 
 ```改动```：hook Android N 的资源，尽管是多余的。
+
+## VirtualAPK 的构建部分已经开源了，![点击这里查看](https://github.com/didi/VirtualAPK/tree/master/virtualapk-gradle-plugin)
