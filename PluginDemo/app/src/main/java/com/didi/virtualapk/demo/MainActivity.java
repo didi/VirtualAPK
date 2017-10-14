@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
         Log.d(TAG, "UserManage.sUserId=" + UserManager.sUserId);
         persistToFile();
 
-        super.onStart();
+        super.onResume();
     }
 
     private void persistToFile() {
