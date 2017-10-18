@@ -3,10 +3,10 @@ package com.didi.virtualapk.collector
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.api.transform.QualifiedContent
-import com.android.ide.common.packaging.PackagingUtils
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
+import com.didi.virtualapk.utils.PackagingUtils
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
 

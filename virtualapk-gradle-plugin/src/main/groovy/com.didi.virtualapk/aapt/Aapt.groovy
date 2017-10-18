@@ -13,7 +13,7 @@ import org.gradle.api.Project
 public class Aapt {
 
     public static final int ID_DELETED = -1
-    public static final int ID_NO_ATTR = -2;
+    public static final int ID_NO_ATTR = -2
 
     public static final String RESOURCES_ARSC = 'resources.arsc'
 

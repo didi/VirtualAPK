@@ -1,13 +1,12 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.tasks.MergeManifests
-import com.android.builder.dependency.ManifestDependency
+import com.android.manifmerger.ManifestProvider
+import com.didi.virtualapk.collector.dependence.DependenceInfo
 import groovy.xml.QName
 import groovy.xml.XmlUtil
 import org.gradle.api.Project
-import com.didi.virtualapk.collector.dependence.DependenceInfo
 
 import java.util.function.Predicate
 
@@ -40,38 +39,15 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
                     "${dep.group}:${dep.artifact}:${dep.version}"
                 } as Set<String>
 
-        def manifestDependencies = task.libraries
-        manifestDependencies.removeIf(new Predicate<ManifestDependencyImpl>() {
+        def manifestDependencies = task.providers
+        manifestDependencies.removeIf(new Predicate<ManifestProvider>() {
             @Override
-            boolean test(ManifestDependencyImpl manifestDependency) {
+            boolean test(ManifestProvider manifestDependency) {
                 return stripAarNames.contains("${manifestDependency.name}")
             }
         })
 
-        manifestDependencies.each {
-            stripManifestDep(it, stripAarNames)
-        }
-
-        task.libraries = manifestDependencies
-    }
-
-    /**
-     * Recursively removes the manifests need be stripped(already exist in host apk) in transitive manifest dependencies
-     * @param manifest The target ManifestDependency who's transitive dependencies will be filtered
-     * @param stripAarNames Set of aar names need stripped
-     */
-    void stripManifestDep(ManifestDependency manifest, Set stripAarNames) {
-        if (manifest == null) return
-
-        manifest.manifestDependencies.removeIf(new Predicate<ManifestDependency>() {
-            @Override
-            boolean test(ManifestDependency manifestDependency) {
-                stripAarNames.contains("${manifestDependency.name}")
-            }
-        })
-        manifest.manifestDependencies.each {
-            stripManifestDep(it, stripAarNames)
-        }
+        task.providers = manifestDependencies
     }
 
     /**

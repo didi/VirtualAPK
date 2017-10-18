@@ -1,7 +1,6 @@
 package com.didi.virtualapk.collector.dependence
 
-import com.android.builder.dependency.JarDependency
-import com.didi.virtualapk.collector.dependence.DependenceInfo
+import com.android.builder.dependency.level2.JavaDependency
 
 /**
  * Represents a Jar dependency. This could be the output of a Java project.
@@ -10,16 +9,16 @@ import com.didi.virtualapk.collector.dependence.DependenceInfo
  */
 class JarDependenceInfo extends DependenceInfo {
 
-    @Delegate JarDependency jarDependency
+    @Delegate JavaDependency dependency
 
-    JarDependenceInfo(String group, String artifact, String version, JarDependency jarDependency) {
+    JarDependenceInfo(String group, String artifact, String version, JavaDependency jarDependency) {
         super(group, artifact, version)
-        this.jarDependency = jarDependency
+        this.dependency = jarDependency
     }
 
     @Override
     File getJarFile() {
-        return jarDependency.jarFile
+        return dependency.artifactFile
     }
 
     @Override

@@ -100,7 +100,7 @@ class VAPlugin extends BasePlugin {
 
         File hostLocalDir = new File(targetHost)
         if (!hostLocalDir.exists()) {
-            def err = "The directory of host application doesn't exist!"
+            def err = "The directory of host application doesn't exist! Dir: ${hostLocalDir.absoluteFile}"
             throw new InvalidUserDataException(err)
         }
 
