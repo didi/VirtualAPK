@@ -1,37 +1,20 @@
-buildscript {
-    System.properties['com.android.build.gradle.overrideVersionCheck'] = 'true'
-
-    repositories {
-        mavenCentral()
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.3'
-    }
-}
-
-allprojects {
-    repositories {
-        mavenCentral()
-        jcenter()
-    }
-}
-
 group = 'com.didichuxing.foundation'
 version = '0.0.5'
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion VERSION_COMPILE_SDK
+    buildToolsVersion VERSION_BUILD_TOOLS
 
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 15
+        minSdkVersion VERSION_MIN_SDK
+        targetSdkVersion VERSION_TARGET_SDK
         versionCode 1
         versionName "1.0"
+    }
+    compileOptions {
+        sourceCompatibility SOURCE_COMPATIBILITY
     }
     buildTypes {
         release {
