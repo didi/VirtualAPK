@@ -65,7 +65,7 @@ class VAPlugin extends BasePlugin {
 
                 virtualApk.with {
                     packageName = variant.applicationId
-                    packagePath = packageName.replaceAll('\\.', File.separator)
+                    packagePath = packageName.replace('.'.charAt(0), File.separatorChar)
                     hostSymbolFile = new File(hostDir, "Host_R.txt")
                     hostDependenceFile = new File(hostDir, "versions.txt")
                 }
