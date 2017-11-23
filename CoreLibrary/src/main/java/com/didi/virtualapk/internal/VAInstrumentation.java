@@ -136,6 +136,9 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 if (activityInfo.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
                     activity.setRequestedOrientation(activityInfo.screenOrientation);
                 }
+                String targetClassName = PluginUtil.getTargetActivity(intent);
+                intent.setClassName(plugin.getPackageName(),targetClassName);
+                activity.setIntent(intent);
             } catch (Exception e) {
                 e.printStackTrace();
             }
