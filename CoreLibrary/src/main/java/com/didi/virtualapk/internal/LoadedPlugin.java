@@ -162,7 +162,7 @@ public final class LoadedPlugin {
         this.mPackageManager = new PluginPackageManager();
         this.mPluginContext = new PluginContext(this);
         this.mNativeLibDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
-        this.mPackage.applicationInfo.nativeLibraryDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE).getAbsolutePath();
+        this.mPackage.applicationInfo.nativeLibraryDir = this.mNativeLibDir.getAbsolutePath();
         this.mResources = createResources(context, apk);
         this.mClassLoader = createClassLoader(context, apk, this.mNativeLibDir, context.getClassLoader());
 
