@@ -4,7 +4,6 @@ import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.didi.virtualapk.VAExtention
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.res.ResourceEntry
-
 import com.didi.virtualapk.collector.res.StyleableEntry
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap

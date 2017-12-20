@@ -2,7 +2,6 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
-import com.android.builder.dependency.JarDependency
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
@@ -20,7 +19,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
     def hostDependencies = [] as Set
 
     def retainedAarLibs = [] as Set<AarDependenceInfo>
-    def retainedJarLib = [] as Set<JarDependency>
+    def retainedJarLib = [] as Set<JarDependenceInfo>
     def stripDependencies = [] as Collection<DependenceInfo>
 
     public PrepareDependenciesHooker(Project project, ApkVariant apkVariant) {
@@ -60,8 +59,8 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
 
         virtualApk.variantData = task.variant
 
-        virtualApk.variantData.variantConfiguration.allLibraries.each {
-            def mavenCoordinates = it.resolvedCoordinates
+        virtualApk.variantData.variantConfiguration.compileDependencies.allAndroidDependencies.each {
+            def mavenCoordinates = it.coordinates
             if (hostDependencies.contains("${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}")) {
                 stripDependencies.add(
                         new AarDependenceInfo(
@@ -80,8 +79,8 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
             }
         }
 
-        virtualApk.variantData.variantConfiguration.jarDependencies.each {
-            def mavenCoordinates = it.resolvedCoordinates
+        virtualApk.variantData.variantConfiguration.compileDependencies.allJavaDependencies.each {
+            def mavenCoordinates = it.coordinates
             if (hostDependencies.contains("${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}")) {
                 stripDependencies.add(
                         new JarDependenceInfo(
@@ -90,7 +89,12 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
                                 mavenCoordinates.version,
                                 it))
             } else {
-                retainedJarLib.add(it)
+                retainedJarLib.add(
+                        new JarDependenceInfo(
+                            mavenCoordinates.groupId,
+                            mavenCoordinates.artifactId,
+                            mavenCoordinates.version,
+                            it))
             }
         }
 

@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 23
+    buildToolsVersion "25.0.2"
 
     defaultConfig {
         applicationId "com.didi.virtualapk.demo"

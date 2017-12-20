@@ -65,7 +65,7 @@ class VAPlugin extends BasePlugin {
 
                 virtualApk.with {
                     packageName = variant.applicationId
-                    packagePath = packageName.replaceAll('\\.', File.separator)
+                    packagePath = packageName.replace('.'.charAt(0), File.separatorChar)
                     hostSymbolFile = new File(hostDir, "Host_R.txt")
                     hostDependenceFile = new File(hostDir, "versions.txt")
                 }
@@ -100,7 +100,7 @@ class VAPlugin extends BasePlugin {
 
         File hostLocalDir = new File(targetHost)
         if (!hostLocalDir.exists()) {
-            def err = "The directory of host application doesn't exist!"
+            def err = "The directory of host application doesn't exist! Dir: ${hostLocalDir.absoluteFile}"
             throw new InvalidUserDataException(err)
         }
 

@@ -1,7 +1,7 @@
 package com.didi.virtualapk.collector
 
-import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
+import com.didi.virtualapk.collector.dependence.DependenceInfo
 
 import java.util.zip.ZipFile
 
@@ -39,8 +39,8 @@ class HostClassAndResCollector {
         stripDependencies.each {
             jarFiles.add(it.jarFile)
             if (it in AarDependenceInfo) {
-                it.localDependencies.each {
-                    jarFiles.add(it.jarFile)
+                it.localJars.each {
+                    jarFiles.add(it)
                 }
             }
         }

@@ -1,7 +1,6 @@
 package com.didi.virtualapk.collector.dependence
 
-import com.android.builder.dependency.LibraryDependency
-import com.didi.virtualapk.collector.dependence.DependenceInfo
+import com.android.builder.dependency.level2.AndroidDependency
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
 import com.google.common.collect.ArrayListMultimap
@@ -18,7 +17,7 @@ class AarDependenceInfo extends DependenceInfo {
     /**
      * Android library dependence in android build system, delegate of AarDependenceInfo
      */
-    @Delegate LibraryDependency libraryDependency
+    @Delegate AndroidDependency dependency
 
     /**
      * All resources(e.g. drawable, layout...) this library can access
@@ -30,14 +29,14 @@ class AarDependenceInfo extends DependenceInfo {
      */
     List<StyleableEntry> aarStyleables = Lists.newArrayList()
 
-    AarDependenceInfo(String group, String artifact, String version, LibraryDependency libraryDependency) {
+    AarDependenceInfo(String group, String artifact, String version, AndroidDependency dependency) {
         super(group, artifact, version)
-        this.libraryDependency = libraryDependency
+        this.dependency = dependency
     }
 
     @Override
     File getJarFile() {
-        return libraryDependency.jarFile
+        return dependency.jarFile
     }
 
     @Override
@@ -53,7 +52,7 @@ class AarDependenceInfo extends DependenceInfo {
 
         def resKeys = [] as Set<String>
 
-        def rSymbol = new File(folder, 'R.txt')
+        def rSymbol = symbolFile
         if (rSymbol.exists()) {
             rSymbol.eachLine { line ->
                 if (!line.empty) {
@@ -72,7 +71,7 @@ class AarDependenceInfo extends DependenceInfo {
 
     /**
      * Return the package name of this library, parse from manifest file
-     * manifest file are obtained by delegating to "libraryDependency"
+     * manifest file are obtained by delegating to "dependency"
      * @return package name of this library
      */
     public String getPackage() {

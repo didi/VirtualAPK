@@ -129,7 +129,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
 
         virtualApk.retainedAarLibs.each {
             def aarPackage = it.package
-            def rJavaFile = new File(sourceOutputDir, "${aarPackage.replaceAll('\\.', File.separator)}${File.separator}R.java")
+            def rJavaFile = new File(sourceOutputDir, "${aarPackage.replace('.'.charAt(0), File.separatorChar)}${File.separator}R.java")
             aapt.generateRJava(rJavaFile, aarPackage, it.aarResources, it.aarStyleables)
         }
     }

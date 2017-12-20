@@ -3,6 +3,7 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.ide.common.res2.AssetSet
+import com.didi.virtualapk.collector.dependence.DependenceInfo
 import org.gradle.api.Project
 
 import java.util.function.Predicate
@@ -30,15 +31,18 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
     @Override
     void beforeTaskExecute(MergeSourceSetFolders task) {
 
-        Set<String> retainedAssetPaths = virtualApk.retainedAarLibs.collect {
-            it.assetsFolder.path
+        Set<String> stripedAssetPaths = virtualApk.stripDependencies.collect {
+            if (it.dependenceType == DependenceInfo.DependenceType.AAR) {
+                return it.assetsFolder.path
+            }
+            return ''
         }
 
         List<AssetSet> assetSets = task.inputDirectorySets
         assetSets.removeIf(new Predicate<AssetSet>() {
             @Override
             boolean test(AssetSet assetSet) {
-                return !retainedAssetPaths.contains(assetSet.sourceFiles.get(0).path)
+                return stripedAssetPaths.contains(assetSet.sourceFiles.get(0).path)
             }
         })
 

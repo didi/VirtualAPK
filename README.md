@@ -28,7 +28,7 @@ Add a dependency in `build.gradle` in root of host project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.1'
+    classpath 'com.didi.virtualapk:gradle:0.9.4'
 }
 ```
 
@@ -85,7 +85,7 @@ Add a dependency in `build.gradle` in root of plugin project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.1'
+    classpath 'com.didi.virtualapk:gradle:0.9.4'
 }
 ```
 

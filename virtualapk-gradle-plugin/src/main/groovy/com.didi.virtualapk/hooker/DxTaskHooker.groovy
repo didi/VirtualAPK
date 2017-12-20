@@ -82,7 +82,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
                 it.delete()
             }
 
-            String baseDir = pkgDir.path - "/${virtualApk.packagePath}"
+            String baseDir = pkgDir.path - "${File.separator}${virtualApk.packagePath}"
 
             project.ant.javac(
                 srcdir: virtualApk.splitRJavaFile.parentFile,

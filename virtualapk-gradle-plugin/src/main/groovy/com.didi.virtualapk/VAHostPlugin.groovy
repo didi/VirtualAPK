@@ -4,6 +4,7 @@ import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.didi.virtualapk.utils.FileUtil;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -51,21 +52,27 @@ public class VAHostPlugin implements Plugin<Project> {
 
         applicationVariant.javaCompile.doLast {
 
-            def versions = new File(vaHostDir, 'versions.txt')
+            FileUtil.saveFile(vaHostDir, "allVersions", {
+                List<String> deps = new ArrayList<String>()
+                project.configurations.each {
+                    String configName = it.name
 
-            if (!vaHostDir.exists()) {
-                vaHostDir.mkdirs()
-            }
+                    it.resolvedConfiguration.resolvedArtifacts.each {
+                        deps.add("${configName} -> ${it.moduleVersion.id}")
+                    }
+                }
+                Collections.sort(deps)
+                return deps
+            })
 
-            List<String> deps = new ArrayList<String>()
-
-            project.configurations.compile.resolvedConfiguration.resolvedArtifacts.each {
-                deps.add("${it.moduleVersion.id} ${it.file.length()}")
-            }
-
-            Collections.sort(deps)
-            deps.add('')
-            versions.write(deps.join('\r\n'))
+            FileUtil.saveFile(vaHostDir, "versions", {
+                List<String> deps = new ArrayList<String>()
+                project.configurations.getByName("_${applicationVariant.name}Compile").resolvedConfiguration.resolvedArtifacts.each {
+                    deps.add("${it.moduleVersion.id} ${it.file.length()}")
+                }
+                Collections.sort(deps)
+                return deps;
+            });
         }
 
     }
