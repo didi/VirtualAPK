@@ -12,12 +12,24 @@ android {
         versionCode 1
     }
 
+    flavorDimensions "demo"
     productFlavors {
         beijing {
+            dimension "demo"
             applicationId 'com.didi.virtualapk.demo'
         }
         shanghai {
+            dimension "demo"
             applicationId 'com.didi.virtualapk.demo'
+        }
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("../../keystore/test.keystore")
+            storePassword "test123456"
+            keyAlias "test"
+            keyPassword "test123456"
         }
     }
 
@@ -29,6 +41,7 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

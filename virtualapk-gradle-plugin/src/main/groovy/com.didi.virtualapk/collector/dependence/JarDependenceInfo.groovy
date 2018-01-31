@@ -1,24 +1,24 @@
 package com.didi.virtualapk.collector.dependence
 
-import com.android.builder.dependency.level2.JavaDependency
+import com.android.builder.model.JavaLibrary
 
 /**
- * Represents a Jar dependency. This could be the output of a Java project.
+ * Represents a Jar library. This could be the output of a Java project.
  *
  * @author zhengtao
  */
 class JarDependenceInfo extends DependenceInfo {
 
-    @Delegate JavaDependency dependency
+    JavaLibrary library
 
-    JarDependenceInfo(String group, String artifact, String version, JavaDependency jarDependency) {
+    JarDependenceInfo(String group, String artifact, String version, JavaLibrary library) {
         super(group, artifact, version)
-        this.dependency = jarDependency
+        this.library = library
     }
 
     @Override
     File getJarFile() {
-        return dependency.artifactFile
+        return library.jarFile
     }
 
     @Override

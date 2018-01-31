@@ -1,6 +1,6 @@
 package com.didi.virtualapk.collector.dependence
 
-import com.android.builder.dependency.level2.AndroidDependency
+import com.android.builder.model.AndroidLibrary
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
 import com.google.common.collect.ArrayListMultimap
@@ -17,7 +17,7 @@ class AarDependenceInfo extends DependenceInfo {
     /**
      * Android library dependence in android build system, delegate of AarDependenceInfo
      */
-    @Delegate AndroidDependency dependency
+    AndroidLibrary library
 
     /**
      * All resources(e.g. drawable, layout...) this library can access
@@ -29,19 +29,31 @@ class AarDependenceInfo extends DependenceInfo {
      */
     List<StyleableEntry> aarStyleables = Lists.newArrayList()
 
-    AarDependenceInfo(String group, String artifact, String version, AndroidDependency dependency) {
+    AarDependenceInfo(String group, String artifact, String version, AndroidLibrary library) {
         super(group, artifact, version)
-        this.dependency = dependency
+        this.library = library
     }
 
     @Override
     File getJarFile() {
-        return dependency.jarFile
+        return library.jarFile
     }
 
     @Override
     DependenceType getDependenceType() {
         return DependenceType.AAR
+    }
+    
+    File getAssetsFolder() {
+        return library.assetsFolder
+    }
+
+    File getJniFolder() {
+        return library.jniFolder
+    }
+
+    Collection<File> getLocalJars() {
+        return library.localJars
     }
 
     /**
@@ -52,7 +64,7 @@ class AarDependenceInfo extends DependenceInfo {
 
         def resKeys = [] as Set<String>
 
-        def rSymbol = symbolFile
+        def rSymbol = library.symbolFile
         if (rSymbol.exists()) {
             rSymbol.eachLine { line ->
                 if (!line.empty) {
@@ -71,11 +83,11 @@ class AarDependenceInfo extends DependenceInfo {
 
     /**
      * Return the package name of this library, parse from manifest file
-     * manifest file are obtained by delegating to "dependency"
+     * manifest file are obtained by delegating to "library"
      * @return package name of this library
      */
     public String getPackage() {
-        def xmlManifest = new XmlParser().parse(manifest)
+        def xmlManifest = new XmlParser().parse(library.manifest)
         return xmlManifest.@package
     }
 }

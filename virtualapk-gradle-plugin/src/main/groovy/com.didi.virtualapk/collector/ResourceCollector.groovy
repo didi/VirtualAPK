@@ -59,7 +59,7 @@ class ResourceCollector {
 
         processResTask = par
 
-        allRSymbolFile = new File(par.textSymbolOutputDir, 'R.txt')
+        allRSymbolFile = par.textSymbolOutputFile
         hostRSymbolFile = virtualApk.hostSymbolFile
     }
 

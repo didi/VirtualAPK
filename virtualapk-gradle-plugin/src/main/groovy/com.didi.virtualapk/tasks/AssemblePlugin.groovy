@@ -1,14 +1,19 @@
 package com.didi.virtualapk.tasks
 
+import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.sun.istack.internal.NotNull
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.internal.ConventionMapping
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+
+import java.util.concurrent.Callable
+
 /**
  * Gradle task for assemble plugin apk
  * @author zhengtao
@@ -56,25 +61,36 @@ public class AssemblePlugin extends DefaultTask{
         @Override
         void execute(AssemblePlugin assemblePluginTask) {
 
-            ConventionMappingHelper.map(assemblePluginTask, "appPackageName") {
+            map(assemblePluginTask, "appPackageName") {
                 variant.applicationId
             }
 
-            ConventionMappingHelper.map(assemblePluginTask, "apkTimestamp", {
+            map(assemblePluginTask, "apkTimestamp", {
                 new Date().format("yyyyMMddHHmmss")
             })
 
-            ConventionMappingHelper.map(assemblePluginTask, "originApkFile") {
+            map(assemblePluginTask, "originApkFile") {
                 variant.outputs[0].outputFile
             }
 
-            ConventionMappingHelper.map(assemblePluginTask, "pluginApkDir") {
+            map(assemblePluginTask, "pluginApkDir") {
                 new File(project.buildDir, "/outputs/plugin/${variant.name}")
             }
 
             assemblePluginTask.setGroup("build")
             assemblePluginTask.setDescription("Build ${variant.name.capitalize()} plugin apk")
             assemblePluginTask.dependsOn(variant.assemble.name)
+        }
+
+        public static void map(@NonNull Task task, @NonNull String key, @NonNull Callable<?> value) {
+            if (task instanceof GroovyObject) {
+                ConventionMapping conventionMapping =
+                        (ConventionMapping) ((GroovyObject) task).getProperty("conventionMapping");
+                conventionMapping.map(key, value);
+            } else {
+                throw new IllegalArgumentException(
+                        "Don't know how to apply convention mapping to task of type " + task.getClass().getName());
+            }
         }
     }
 

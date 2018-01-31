@@ -1,11 +1,19 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
+import com.android.build.gradle.internal.tasks.AppPreBuildTask
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.builder.model.Dependencies
+import com.android.builder.model.SyncIssue
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
+import com.didi.virtualapk.utils.FileUtil
 import org.gradle.api.Project
+
+import java.util.function.Consumer
 
 /**
  * Gather list of dependencies(aar&jar) need to be stripped&retained after the PrepareDependenciesTask finished.
@@ -13,7 +21,7 @@ import org.gradle.api.Project
  *
  * @author zhengtao
  */
-class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask> {
+class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
 
     //group:artifact:version
     def hostDependencies = [] as Set
@@ -28,7 +36,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
 
     @Override
     String getTaskName() {
-        return "prepare${apkVariant.name.capitalize()}Dependencies"
+        return "pre${apkVariant.name.capitalize()}Build"
     }
 
     /**
@@ -36,7 +44,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
      * @param task Gradle Task fo PrepareDependenciesTask
      */
     @Override
-    void beforeTaskExecute(PrepareDependenciesTask task) {
+    void beforeTaskExecute(AppPreBuildTask task) {
 
         virtualApk.hostDependenceFile.splitEachLine('\\s+', { columns ->
             final def module = columns[0].split(':')
@@ -55,12 +63,18 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
      * @param task Gradle Task fo PrepareDependenciesTask
      */
     @Override
-    void afterTaskExecute(PrepareDependenciesTask task) {
+    void afterTaskExecute(AppPreBuildTask task) {
+        BaseVariantData variantData = ((ApplicationVariantImpl) apkVariant).variantData
 
-        virtualApk.variantData = task.variant
+        Dependencies dependencies = new ArtifactDependencyGraph().createDependencies(variantData.scope, false, new Consumer<SyncIssue>() {
+            @Override
+            void accept(SyncIssue syncIssue) {
+                println "Error: ${syncIssue}"
+            }
+        })
 
-        virtualApk.variantData.variantConfiguration.compileDependencies.allAndroidDependencies.each {
-            def mavenCoordinates = it.coordinates
+        dependencies.libraries.each {
+            def mavenCoordinates = it.resolvedCoordinates
             if (hostDependencies.contains("${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}")) {
                 stripDependencies.add(
                         new AarDependenceInfo(
@@ -72,15 +86,15 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
             } else {
                 retainedAarLibs.add(
                         new AarDependenceInfo(
-                            mavenCoordinates.groupId,
-                            mavenCoordinates.artifactId,
-                            mavenCoordinates.version,
-                            it))
+                                mavenCoordinates.groupId,
+                                mavenCoordinates.artifactId,
+                                mavenCoordinates.version,
+                                it))
             }
-        }
 
-        virtualApk.variantData.variantConfiguration.compileDependencies.allJavaDependencies.each {
-            def mavenCoordinates = it.coordinates
+        }
+        dependencies.javaLibraries.each {
+            def mavenCoordinates = it.resolvedCoordinates
             if (hostDependencies.contains("${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}")) {
                 stripDependencies.add(
                         new JarDependenceInfo(
@@ -91,13 +105,20 @@ class PrepareDependenciesHooker extends GradleTaskHooker<PrepareDependenciesTask
             } else {
                 retainedJarLib.add(
                         new JarDependenceInfo(
-                            mavenCoordinates.groupId,
-                            mavenCoordinates.artifactId,
-                            mavenCoordinates.version,
-                            it))
+                                mavenCoordinates.groupId,
+                                mavenCoordinates.artifactId,
+                                mavenCoordinates.version,
+                                it))
             }
+
         }
 
+        File hostDir = task.fakeOutputDirectory
+        FileUtil.saveFile(hostDir, "${taskName}-stripDependencies", stripDependencies)
+        FileUtil.saveFile(hostDir, "${taskName}-retainedAarLibs", retainedAarLibs)
+        FileUtil.saveFile(hostDir, "${taskName}-retainedJarLib", retainedJarLib)
+
+        virtualApk.variantData = variantData
         virtualApk.stripDependencies = stripDependencies
         virtualApk.retainedAarLibs = retainedAarLibs
     }

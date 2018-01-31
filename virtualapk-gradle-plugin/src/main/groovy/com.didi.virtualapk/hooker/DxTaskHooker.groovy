@@ -2,7 +2,7 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.didi.virtualapk.VAExtention
+import com.google.common.io.Files
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.Project
 
@@ -32,29 +32,43 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     @Override
     void beforeTaskExecute(TransformTask task) {
         task.inputs.files.each { input ->
+//            println "${task.name}: ${input.absoluteFile}"
             if(input.directory) {
                 input.eachFileRecurse { file ->
-                    if (file.directory && file.path.endsWith(virtualApk.packagePath)) {
+                    handleFile(file)
+                }
+            } else {
+                handleFile(input)
+            }
+        }
+    }
 
-                        recompileSplitR(file)
+    void handleFile(File file) {
+        if (file.directory && file.path.endsWith(virtualApk.packagePath)) {
 
-                    } else if (file.file && file.name.endsWith('.jar')) {
-                        // Decompress jar file
-                        File unzipJarDir = new File(file.parentFile, FilenameUtils.getBaseName(file.name))
-                        project.copy {
-                            from project.zipTree(file)
-                            into unzipJarDir
-                        }
+            recompileSplitR(file)
 
-                        // VirtualApk Package Dir
-                        File pkgDir = new File(unzipJarDir, virtualApk.packagePath)
-                        if (pkgDir.exists()) {
-                            boolean compileResult = recompileSplitR(pkgDir)
-                            if (compileResult) {
-                                project.ant.zip(baseDir: unzipJarDir, destFile: file)
-                            }
-                        }
+        } else if (file.file && file.name.endsWith('.jar')) {
+            // Decompress jar file
+            File unzipJarDir = new File(file.parentFile, FilenameUtils.getBaseName(file.name))
+            project.copy {
+                from project.zipTree(file)
+                into unzipJarDir
+            }
+
+            // VirtualApk Package Dir
+            File pkgDir = new File(unzipJarDir, virtualApk.packagePath)
+            if (pkgDir.exists()) {
+                boolean compileResult = recompileSplitR(pkgDir)
+                if (compileResult) {
+                    File backupDir = new File(file.getParentFile(), 'original')
+                    backupDir.deleteDir()
+                    project.copy {
+                        from file
+                        into backupDir
                     }
+
+                    project.ant.zip(baseDir: unzipJarDir, destFile: file)
                 }
             }
         }

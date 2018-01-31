@@ -41,7 +41,7 @@ class HostJniLibsCollector {
      */
     def collect(Collection<DependenceInfo> stripDependencies) {
         stripDependencies.each {
-            if (it.dependenceType == DependenceInfo.DependenceType.AAR) {
+            if (it instanceof AarDependenceInfo) {
                 gatherListFromFolder(it as AarDependenceInfo, jniFileList)
             } else {
                 gatherListFromJar(it as JarDependenceInfo, jniFileList)

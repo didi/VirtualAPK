@@ -4,8 +4,6 @@ import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.didi.virtualapk.VAExtention
 import com.didi.virtualapk.collector.HostClassAndResCollector
-import com.didi.virtualapk.hooker.PrepareDependenciesHooker
-import com.didi.virtualapk.utils.ZipUtil
 import groovy.io.FileType
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
@@ -59,23 +57,34 @@ class StripClassAndResTransform extends Transform {
 
         transformInvocation.inputs.each {
             it.directoryInputs.each { directoryInput ->
-                directoryInput.file.traverse (type: FileType.FILES){
+//                println "input dir: ${directoryInput.file.absoluteFile}"
+                def destDir = transformInvocation.outputProvider.getContentLocation(
+                        directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
+//                println "output dir: ${destDir.absoluteFile}"
+                directoryInput.file.traverse(type: FileType.FILES) {
                     def entryName = it.path.substring(directoryInput.file.path.length() + 1)
-                    def destName = directoryInput.name + '/' + entryName
-                    def dest = transformInvocation.outputProvider.getContentLocation(
-                            destName, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
+//                    println "found file: ${it.absoluteFile}"
+//                    println "entryName: ${entryName}"
                     if (!stripEntries.contains(entryName)) {
+                        def dest = new File(destDir, entryName)
                         FileUtils.copyFile(it, dest)
+                        println "Copied to file: ${dest.absoluteFile}"
+                    } else {
+                        println "Stripped file: ${it.absoluteFile}"
                     }
                 }
             }
 
             it.jarInputs.each { jarInput ->
+//                println "${name} jar: ${jarInput.file.absoluteFile}"
                 Set<String> jarEntries = HostClassAndResCollector.unzipJar(jarInput.file)
                 if (!stripEntries.containsAll(jarEntries)){
                     def dest = transformInvocation.outputProvider.getContentLocation(jarInput.name,
                             jarInput.contentTypes, jarInput.scopes, Format.JAR)
                     FileUtils.copyFile(jarInput.file, dest)
+                    println "Copied to jar: ${dest.absoluteFile}"
+                } else {
+                    println "Stripped jar: ${jarInput.file.absoluteFile}"
                 }
             }
         }

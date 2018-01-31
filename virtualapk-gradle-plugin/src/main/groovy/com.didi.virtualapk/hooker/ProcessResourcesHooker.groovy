@@ -3,12 +3,16 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.ApkVariant
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.internal.scope.TaskOutputHolder
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.sdklib.BuildToolInfo
 import com.didi.virtualapk.aapt.Aapt
 import com.didi.virtualapk.collector.ResourceCollector
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
+import com.didi.virtualapk.utils.FileUtil
 import com.google.common.collect.ListMultimap
 import com.google.common.io.Files
 import org.gradle.api.Project
@@ -53,13 +57,27 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
      */
     @Override
     void afterTaskExecute(ProcessAndroidResources par) {
-        def apFile = par.packageOutputFile
+        BaseVariantData variantData = ((ApplicationVariantImpl) apkVariant).variantData
+        variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.PROCESSED_RES).each {
+            repackage(par, it.outputFile)
+        }
+    }
+
+    void repackage(ProcessAndroidResources par, File apFile) {
         def resourcesDir = new File(apFile.parentFile, Files.getNameWithoutExtension(apFile.name))
 
         /*
          * Clean up resources merge directory
          */
         resourcesDir.deleteDir()
+
+        File backupFile = new File(apFile.getParentFile(), "${Files.getNameWithoutExtension(apFile.name)}-original.${Files.getFileExtension(apFile.name)}")
+        backupFile.delete()
+        project.copy {
+            from apFile
+            into apFile.getParentFile()
+            rename { backupFile.name }
+        }
 
         /*
          * Unzip resources-${variant.name}.ap_
@@ -73,6 +91,13 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
             include 'res/**/*'
         }
 
+//        File backupDir = new File(resourcesDir.parentFile, resourcesDir.name + '-original')
+//        backupDir.deleteDir()
+//        project.copy {
+//            from project.fileTree(resourcesDir)
+//            into backupDir
+//        }
+
         resourceCollector = new ResourceCollector(project, par)
         resourceCollector.collect()
 
@@ -80,7 +105,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         def retainedStylealbes = convertStyleablesForAapt(resourceCollector.pluginStyleables)
         def resIdMap = resourceCollector.resIdMap
 
-        def rSymbolFile = new File(par.textSymbolOutputDir, 'R.txt')
+        def rSymbolFile = par.textSymbolOutputFile
         def libRefTable = ["${virtualApk.packageId}": par.packageForR]
         def filteredResources = [] as HashSet<String>
         def updatedResources = [] as HashSet<String>
@@ -92,6 +117,12 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         //Modify the arsc file, and replace ids of related xml files
         aapt.filterPackage(retainedTypes, retainedStylealbes, virtualApk.packageId, resIdMap, libRefTable, updatedResources)
 
+        File hostDir = resourcesDir.parentFile
+        FileUtil.saveFile(hostDir, "${taskName}-retainedTypes", retainedTypes)
+        FileUtil.saveFile(hostDir, "${taskName}-retainedStylealbes", retainedStylealbes)
+        FileUtil.saveFile(hostDir, "${taskName}-filteredResources", filteredResources)
+        FileUtil.saveFile(hostDir, "${taskName}-updatedResources", updatedResources)
+
         /*
          * Delete filtered entries and then add updated resources into resources-${variant.name}.ap_
          */
@@ -102,7 +133,8 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
             workingDir resourcesDir
             args 'add', apFile.path
             args updatedResources
-            standardOutput = new ByteArrayOutputStream()
+            standardOutput = System.out
+            errorOutput = System.err
         }
 
         updateRJava(aapt, par.sourceOutputDir)

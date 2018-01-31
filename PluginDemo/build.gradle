@@ -1,16 +1,18 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
+        google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
-        classpath 'com.didi.virtualapk:gradle:0.9.4'
+        classpath 'com.android.tools.build:gradle:3.0.0'
+        classpath 'com.didi.virtualapk:gradle:0.9.6-dev'
     }
 }
 
 allprojects {
     repositories {
+        google()
         jcenter()
     }
 }

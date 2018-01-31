@@ -1,7 +1,7 @@
 package com.didi.virtualapk.collector.dependence
 
 /**
- * Represents a dependency in Android Project
+ * Represents a library in Android Project
  *
  * @author zhengtao
  */
@@ -69,4 +69,8 @@ public abstract class DependenceInfo {
     abstract File getJarFile()
     abstract DependenceType getDependenceType()
 
+    @Override
+    String toString() {
+        return "${group}:${artifact}:${version} -> ${jarFile} -> ${super.toString()}"
+    }
 }

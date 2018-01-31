@@ -3,7 +3,7 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.ProGuardTransform
-import com.didi.virtualapk.collector.dependence.DependenceInfo
+import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 
@@ -65,7 +65,7 @@ class ProguardHooker extends GradleTaskHooker<TransformTask> {
 
         virtualApk.stripDependencies.each {
             proguardTransform.libraryJar(it.jarFile)
-            if (it.dependenceType == DependenceInfo.DependenceType.AAR) {
+            if (it instanceof AarDependenceInfo) {
                 it.localJars.each {
                     proguardTransform.libraryJar(it)
                 }

@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         mavenLocal()
+        google()
         mavenCentral()
         jcenter()
     }
@@ -20,6 +21,7 @@ tasks.withType(GroovyCompile) {
 
 repositories {
     mavenLocal()
+    google()
     mavenCentral()
     jcenter()
 }
@@ -42,7 +44,7 @@ dependencies {
     compile 'commons-codec:commons-codec:1.6'
     compile 'org.ow2.asm:asm:4.0'
     compile 'org.javassist:javassist:3.18.2-GA'
-    compile 'com.android.tools.build:gradle:2.3.3'
+    compile 'com.android.tools.build:gradle:3.0.0'
 }
 
 
