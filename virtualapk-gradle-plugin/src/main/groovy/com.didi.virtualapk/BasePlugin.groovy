@@ -3,6 +3,7 @@ package com.didi.virtualapk
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.TaskContainerAdaptor
 import com.android.build.gradle.internal.TaskFactory
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.didi.virtualapk.tasks.AssemblePlugin
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -47,9 +48,10 @@ public class BasePlugin implements Plugin<Project> {
 
         taskFactory = new TaskContainerAdaptor(project.tasks)
         project.afterEvaluate {
-            project.android.applicationVariants.each { ApkVariant variant ->
+
+            project.android.applicationVariants.each { ApplicationVariantImpl variant ->
                 if (variant.buildType.name.equalsIgnoreCase("release")) {
-                    final def variantPluginTaskName = "assemblePlugin${variant.name.capitalize()}"
+                    final def variantPluginTaskName = variant.variantData.scope.getTaskName('assemble', 'Plugin')
                     final def configAction = new AssemblePlugin.ConfigAction(project, variant)
 
                     taskFactory.create(variantPluginTaskName, AssemblePlugin, configAction)

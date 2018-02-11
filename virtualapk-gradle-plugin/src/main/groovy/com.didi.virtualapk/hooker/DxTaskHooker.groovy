@@ -2,7 +2,6 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.google.common.io.Files
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.Project
 

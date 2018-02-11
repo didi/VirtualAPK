@@ -3,9 +3,7 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.scope.TaskOutputHolder
-import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.sdklib.BuildToolInfo
 import com.didi.virtualapk.aapt.Aapt
@@ -16,6 +14,7 @@ import com.didi.virtualapk.utils.FileUtil
 import com.google.common.collect.ListMultimap
 import com.google.common.io.Files
 import org.gradle.api.Project
+
 /**
  * Filter the host resources out of the plugin apk.
  * Modify the .arsc file to delete host element,
@@ -41,7 +40,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
 
     @Override
     String getTaskName() {
-        return "process${apkVariant.name.capitalize()}Resources"
+        return scope.getTaskName('process', 'Resources')
     }
 
     @Override
@@ -57,7 +56,6 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
      */
     @Override
     void afterTaskExecute(ProcessAndroidResources par) {
-        BaseVariantData variantData = ((ApplicationVariantImpl) apkVariant).variantData
         variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.PROCESSED_RES).each {
             repackage(par, it.outputFile)
         }
@@ -117,7 +115,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         //Modify the arsc file, and replace ids of related xml files
         aapt.filterPackage(retainedTypes, retainedStylealbes, virtualApk.packageId, resIdMap, libRefTable, updatedResources)
 
-        File hostDir = resourcesDir.parentFile
+        File hostDir = virtualApk.getBuildDir(scope)
         FileUtil.saveFile(hostDir, "${taskName}-retainedTypes", retainedTypes)
         FileUtil.saveFile(hostDir, "${taskName}-retainedStylealbes", retainedStylealbes)
         FileUtil.saveFile(hostDir, "${taskName}-filteredResources", filteredResources)
@@ -155,7 +153,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         def rSourceFile = new File(sourceOutputDir, "${virtualApk.packagePath}${File.separator}R.java")
         aapt.generateRJava(rSourceFile, apkVariant.applicationId, resourceCollector.allResources, resourceCollector.allStyleables)
 
-        def splitRSourceFile = new File(sourceOutputDir.parentFile, "va${File.separator}${virtualApk.packagePath}${File.separator}R.java")
+        def splitRSourceFile = new File(virtualApk.getBuildDir(scope), "source${File.separator}r${File.separator}${virtualApk.packagePath}${File.separator}R.java")
         aapt.generateRJava(splitRSourceFile, apkVariant.applicationId, resourceCollector.pluginResources, resourceCollector.pluginStyleables)
         virtualApk.splitRJavaFile = splitRSourceFile
 

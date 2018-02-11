@@ -1,7 +1,7 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.AppExtension
-import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.pipeline.TransformTask
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -29,23 +29,20 @@ public class TaskHookerManager {
         project.gradle.addListener(new VirtualApkTaskListener())
     }
 
-
     public void registerTaskHookers() {
-        project.afterEvaluate {
-            android.applicationVariants.all { ApplicationVariant appVariant ->
-                if (!appVariant.buildType.name.equalsIgnoreCase("release")) {
-                    return
-                }
-
-                registerTaskHooker(instantiator.newInstance(PrepareDependenciesHooker, project, appVariant))
-                registerTaskHooker(instantiator.newInstance(MergeAssetsHooker, project, appVariant))
-                registerTaskHooker(instantiator.newInstance(MergeManifestsHooker, project, appVariant))
-                registerTaskHooker(instantiator.newInstance(MergeJniLibsHooker, project, appVariant))
-//                registerTaskHooker(instantiator.newInstance(ShrinkResourcesHooker, project, appVariant))
-                registerTaskHooker(instantiator.newInstance(ProcessResourcesHooker, project, appVariant))
-                registerTaskHooker(instantiator.newInstance(ProguardHooker, project, appVariant))
-                registerTaskHooker(instantiator.newInstance(DxTaskHooker, project, appVariant))
+        android.applicationVariants.all { ApplicationVariantImpl appVariant ->
+            if (!appVariant.buildType.name.equalsIgnoreCase("release")) {
+                return
             }
+
+            registerTaskHooker(instantiator.newInstance(PrepareDependenciesHooker, project, appVariant))
+            registerTaskHooker(instantiator.newInstance(MergeAssetsHooker, project, appVariant))
+            registerTaskHooker(instantiator.newInstance(MergeManifestsHooker, project, appVariant))
+            registerTaskHooker(instantiator.newInstance(MergeJniLibsHooker, project, appVariant))
+//            registerTaskHooker(instantiator.newInstance(ShrinkResourcesHooker, project, appVariant))
+            registerTaskHooker(instantiator.newInstance(ProcessResourcesHooker, project, appVariant))
+            registerTaskHooker(instantiator.newInstance(ProguardHooker, project, appVariant))
+            registerTaskHooker(instantiator.newInstance(DxTaskHooker, project, appVariant))
         }
     }
 
@@ -59,7 +56,6 @@ public class TaskHookerManager {
     public <T> T findHookerByName(String taskName) {
         return taskHookerMap[taskName] as T
     }
-
 
     private class VirtualApkTaskListener implements TaskExecutionListener {
 

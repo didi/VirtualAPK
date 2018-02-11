@@ -39,6 +39,7 @@ class MergeJniLibsHooker extends GradleTaskHooker<TransformTask> {
 
         excludeJniFiles.each {
             androidConfig.packagingOptions.exclude("/${it}")
+            println "Stripped jni file: ${it}"
         }
 
 //        Reflect.on(task.transform)

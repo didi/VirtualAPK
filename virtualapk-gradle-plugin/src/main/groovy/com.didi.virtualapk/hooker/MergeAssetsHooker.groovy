@@ -23,7 +23,7 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
 
     @Override
     String getTaskName() {
-        return "merge${apkVariant.name.capitalize()}Assets"
+        return scope.getTaskName('merge', 'Assets')
     }
 
     /**

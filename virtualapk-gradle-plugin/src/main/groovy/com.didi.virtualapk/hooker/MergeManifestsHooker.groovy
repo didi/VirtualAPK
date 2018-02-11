@@ -1,9 +1,7 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.scope.TaskOutputHolder
-import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.MergeManifests
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.utils.Reflect
@@ -34,7 +32,7 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
 
     @Override
     String getTaskName() {
-        return "process${apkVariant.name.capitalize()}Manifest"
+        return scope.getTaskName('process', 'Manifest')
     }
 
     @Override
@@ -58,7 +56,6 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
      */
     @Override
     void afterTaskExecute(MergeManifests task) {
-        BaseVariantData variantData = ((ApplicationVariantImpl) apkVariant).variantData
         variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).each {
             rewrite(it.outputFile)
         }

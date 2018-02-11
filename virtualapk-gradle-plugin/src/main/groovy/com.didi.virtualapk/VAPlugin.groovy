@@ -1,10 +1,8 @@
 package com.didi.virtualapk
 
-import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.didi.virtualapk.hooker.TaskHookerManager
 import com.didi.virtualapk.transform.StripClassAndResTransform
-
-
 import com.didi.virtualapk.utils.FileBinaryCategory
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
@@ -44,6 +42,7 @@ class VAPlugin extends BasePlugin {
         super.apply(project)
 
         if (!isBuildingPlugin) {
+            println "Skipped all virtualapk's configurations!"
             return
         }
 
@@ -54,12 +53,11 @@ class VAPlugin extends BasePlugin {
 
         project.android.registerTransform(new StripClassAndResTransform(project))
 
-        taskHookerManager = new TaskHookerManager(project, instantiator)
-        taskHookerManager.registerTaskHookers()
-
-
         project.afterEvaluate {
-            project.android.applicationVariants.each { ApplicationVariant variant ->
+            taskHookerManager = new TaskHookerManager(project, instantiator)
+            taskHookerManager.registerTaskHookers()
+
+            project.android.applicationVariants.each { ApplicationVariantImpl variant ->
 
                 checkConfig()
 
@@ -100,7 +98,7 @@ class VAPlugin extends BasePlugin {
 
         File hostLocalDir = new File(targetHost)
         if (!hostLocalDir.exists()) {
-            def err = "The directory of host application doesn't exist! Dir: ${hostLocalDir.absoluteFile}"
+            def err = "The directory of host application doesn't exist! Dir: ${hostLocalDir.absolutePath}"
             throw new InvalidUserDataException(err)
         }
 
@@ -111,7 +109,7 @@ class VAPlugin extends BasePlugin {
                 dst << hostR
             }
         } else {
-            def err = new StringBuilder("Can't find ${hostR.path}, please check up your host application\n")
+            def err = new StringBuilder("Can't find ${hostR.absolutePath}, please check up your host application\n")
             err.append("  need apply com.didi.virtualapk.host in build.gradle of host application\n ")
             throw new InvalidUserDataException(err.toString())
         }
@@ -123,7 +121,7 @@ class VAPlugin extends BasePlugin {
                 dst << hostVersions
             }
         } else {
-            def err = new StringBuilder("Can't find ${hostVersions.path}, please check up your host application\n")
+            def err = new StringBuilder("Can't find ${hostVersions.absolutePath}, please check up your host application\n")
             err.append("  need apply com.didi.virtualapk.host in build.gradle of host application \n")
             throw new InvalidUserDataException(err.toString())
         }

@@ -37,7 +37,7 @@ public class VAHostPlugin implements Plugin<Project> {
 
         project.afterEvaluate {
 
-            project.android.applicationVariants.each { ApplicationVariant variant ->
+            project.android.applicationVariants.each { ApplicationVariantImpl variant ->
                 generateDependencies(variant)
                 backupHostR(variant)
                 backupProguardMapping(variant)
@@ -50,7 +50,7 @@ public class VAHostPlugin implements Plugin<Project> {
     /**
      * Generate ${project.buildDir}/VAHost/versions.txt
      */
-    def generateDependencies(ApplicationVariant applicationVariant) {
+    def generateDependencies(ApplicationVariantImpl applicationVariant) {
 
         applicationVariant.javaCompile.doLast {
 
@@ -74,7 +74,7 @@ public class VAHostPlugin implements Plugin<Project> {
 
             FileUtil.saveFile(vaHostDir, "versions", {
                 List<String> deps = new ArrayList<String>()
-                Configuration compileClasspath = ((ApplicationVariantImpl) applicationVariant).variantData.variantDependency.compileClasspath
+                Configuration compileClasspath = applicationVariant.variantData.variantDependency.compileClasspath
                 println "Used compileClasspath: ${compileClasspath.name}"
                 compileClasspath.resolvedConfiguration.resolvedArtifacts.each {
                     deps.add("${it.moduleVersion.id} ${it.file.length()}")

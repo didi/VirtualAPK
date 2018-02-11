@@ -1,6 +1,6 @@
 package com.didi.virtualapk
 
-import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.scope.VariantScope
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 
@@ -38,7 +38,10 @@ public class VAExtention {
     /** File of split R.java */
     File splitRJavaFile
 
-    BaseVariantData variantData
+    public File getBuildDir(VariantScope scope) {
+        return new File(scope.getGlobalScope().getIntermediatesDir(),
+                "virtualapk/" + scope.getVariantConfiguration().getDirName())
+    }
 
     public void exclude(final String...filters) {
         if (null != filters) {
