@@ -68,7 +68,7 @@ class StripClassAndResTransform extends Transform {
                     if (!stripEntries.contains(entryName)) {
                         def dest = new File(destDir, entryName)
                         FileUtils.copyFile(it, dest)
-                        println "Copied to file: ${dest.absoluteFile}"
+//                        println "Copied to file: ${dest.absoluteFile}"
                     } else {
                         println "Stripped file: ${it.absoluteFile}"
                     }
@@ -82,7 +82,7 @@ class StripClassAndResTransform extends Transform {
                     def dest = transformInvocation.outputProvider.getContentLocation(jarInput.name,
                             jarInput.contentTypes, jarInput.scopes, Format.JAR)
                     FileUtils.copyFile(jarInput.file, dest)
-                    println "Copied to jar: ${dest.absoluteFile}"
+//                    println "Copied to jar: ${dest.absoluteFile}"
                 } else {
                     println "Stripped jar: ${jarInput.file.absoluteFile}"
                 }

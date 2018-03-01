@@ -147,20 +147,31 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
      *
      */
     def updateRJava(Aapt aapt, File sourceOutputDir) {
+        File vaBuildDir = virtualApk.getBuildDir(scope)
+        File backupDir = new File(vaBuildDir, "origin/r")
 
-        sourceOutputDir.deleteDir()
+        project.ant.move(todir: backupDir) {
+            fileset(dir: sourceOutputDir) {
+                include(name: '**/R.java')
+            }
+        }
+
+        FileUtil.deleteEmptySubfolders(sourceOutputDir)
 
         def rSourceFile = new File(sourceOutputDir, "${virtualApk.packagePath}${File.separator}R.java")
         aapt.generateRJava(rSourceFile, apkVariant.applicationId, resourceCollector.allResources, resourceCollector.allStyleables)
+        println "Updated R.java: ${rSourceFile.absoluteFile}"
 
-        def splitRSourceFile = new File(virtualApk.getBuildDir(scope), "source${File.separator}r${File.separator}${virtualApk.packagePath}${File.separator}R.java")
+        def splitRSourceFile = new File(vaBuildDir, "source${File.separator}r${File.separator}${virtualApk.packagePath}${File.separator}R.java")
         aapt.generateRJava(splitRSourceFile, apkVariant.applicationId, resourceCollector.pluginResources, resourceCollector.pluginStyleables)
+        println "Updated R.java: ${splitRSourceFile.absoluteFile}"
         virtualApk.splitRJavaFile = splitRSourceFile
 
         virtualApk.retainedAarLibs.each {
             def aarPackage = it.package
             def rJavaFile = new File(sourceOutputDir, "${aarPackage.replace('.'.charAt(0), File.separatorChar)}${File.separator}R.java")
             aapt.generateRJava(rJavaFile, aarPackage, it.aarResources, it.aarStyleables)
+            println "Updated R.java: ${rJavaFile.absoluteFile}"
         }
     }
 

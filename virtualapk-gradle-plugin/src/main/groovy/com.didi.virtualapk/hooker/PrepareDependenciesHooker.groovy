@@ -113,6 +113,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         FileUtil.saveFile(hostDir, "${taskName}-stripDependencies", stripDependencies)
         FileUtil.saveFile(hostDir, "${taskName}-retainedAarLibs", retainedAarLibs)
         FileUtil.saveFile(hostDir, "${taskName}-retainedJarLib", retainedJarLib)
+        println "Analyzed all dependencis. Get more infomation in dir: ${hostDir.absoluteFile}"
 
         virtualApk.stripDependencies = stripDependencies
         virtualApk.retainedAarLibs = retainedAarLibs

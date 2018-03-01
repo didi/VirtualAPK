@@ -303,8 +303,6 @@ public class ArscEditor extends AssetEditor {
         if (DEBUG_NOISY) dumpTable()
 
         close()
-
-        print '###############################################################'
     }
 
     /**
