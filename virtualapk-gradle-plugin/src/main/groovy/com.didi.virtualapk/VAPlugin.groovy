@@ -27,6 +27,8 @@ class VAPlugin extends BasePlugin {
      */
     private def hostDir
 
+    protected boolean isBuildingPlugin = false
+
     /**
      * TaskHooker manager, registers hookers when apply invoked
      */
@@ -38,22 +40,29 @@ class VAPlugin extends BasePlugin {
     }
 
     @Override
-    void apply(final Project project) {
-        super.apply(project)
-
+    protected void beforeCreateAndroidTasks(boolean isBuildingPlugin) {
+        this.isBuildingPlugin = isBuildingPlugin
         if (!isBuildingPlugin) {
-            println "Skipped all virtualapk's configurations!"
+            println "Skipped all VirtualApk's configurations!"
             return
         }
+        project.android.registerTransform(new StripClassAndResTransform(project))
+    }
+
+    @Override
+    void apply(final Project project) {
+        super.apply(project)
 
         hostDir = new File(project.rootDir, "host")
         if (!hostDir.exists()) {
             hostDir.mkdirs()
         }
 
-        project.android.registerTransform(new StripClassAndResTransform(project))
-
         project.afterEvaluate {
+            if (!isBuildingPlugin) {
+                return
+            }
+
             taskHookerManager = new TaskHookerManager(project, instantiator)
             taskHookerManager.registerTaskHookers()
 
