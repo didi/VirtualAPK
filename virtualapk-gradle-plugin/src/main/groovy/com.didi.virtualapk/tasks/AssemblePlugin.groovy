@@ -2,6 +2,7 @@ package com.didi.virtualapk.tasks
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
+import com.didi.virtualapk.utils.TaskUtil
 import com.sun.istack.internal.NotNull
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
@@ -82,15 +83,8 @@ public class AssemblePlugin extends DefaultTask{
             assemblePluginTask.dependsOn(variant.assemble.name)
         }
 
-        public static void map(@NonNull Task task, @NonNull String key, @NonNull Callable<?> value) {
-            if (task instanceof GroovyObject) {
-                ConventionMapping conventionMapping =
-                        (ConventionMapping) ((GroovyObject) task).getProperty("conventionMapping");
-                conventionMapping.map(key, value);
-            } else {
-                throw new IllegalArgumentException(
-                        "Don't know how to apply convention mapping to task of type " + task.getClass().getName());
-            }
+        static void map(@NonNull Task task, @NonNull String key, @NonNull Callable<?> value) {
+            TaskUtil.map(task, key, value)
         }
     }
 

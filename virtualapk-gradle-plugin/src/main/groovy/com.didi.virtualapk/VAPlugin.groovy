@@ -1,6 +1,13 @@
 package com.didi.virtualapk
 
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.didi.virtualapk.hooker.DxTaskHooker
+import com.didi.virtualapk.hooker.MergeAssetsHooker
+import com.didi.virtualapk.hooker.MergeJniLibsHooker
+import com.didi.virtualapk.hooker.MergeManifestsHooker
+import com.didi.virtualapk.hooker.PrepareDependenciesHooker
+import com.didi.virtualapk.hooker.ProcessResourcesHooker
+import com.didi.virtualapk.hooker.ProguardHooker
 import com.didi.virtualapk.hooker.TaskHookerManager
 import com.didi.virtualapk.transform.StripClassAndResTransform
 import com.didi.virtualapk.utils.FileBinaryCategory
@@ -63,7 +70,7 @@ class VAPlugin extends BasePlugin {
                 return
             }
 
-            taskHookerManager = new TaskHookerManager(project, instantiator)
+            taskHookerManager = new VATaskHookerManager(project, instantiator)
             taskHookerManager.registerTaskHookers()
 
             project.android.applicationVariants.each { ApplicationVariantImpl variant ->
@@ -140,6 +147,31 @@ class VAPlugin extends BasePlugin {
             def dst = new File(hostDir, "mapping.txt")
             use(FileBinaryCategory) {
                 dst << hostMapping
+            }
+        }
+    }
+
+    static class VATaskHookerManager extends TaskHookerManager {
+
+        VATaskHookerManager(Project project, Instantiator instantiator) {
+            super(project, instantiator)
+        }
+
+        @Override
+        void registerTaskHookers() {
+            android.applicationVariants.all { ApplicationVariantImpl appVariant ->
+                if (!appVariant.buildType.name.equalsIgnoreCase("release")) {
+                    return
+                }
+
+                registerTaskHooker(instantiator.newInstance(PrepareDependenciesHooker, project, appVariant))
+                registerTaskHooker(instantiator.newInstance(MergeAssetsHooker, project, appVariant))
+                registerTaskHooker(instantiator.newInstance(MergeManifestsHooker, project, appVariant))
+                registerTaskHooker(instantiator.newInstance(MergeJniLibsHooker, project, appVariant))
+//                registerTaskHooker(instantiator.newInstance(ShrinkResourcesHooker, project, appVariant))
+                registerTaskHooker(instantiator.newInstance(ProcessResourcesHooker, project, appVariant))
+                registerTaskHooker(instantiator.newInstance(ProguardHooker, project, appVariant))
+                registerTaskHooker(instantiator.newInstance(DxTaskHooker, project, appVariant))
             }
         }
     }

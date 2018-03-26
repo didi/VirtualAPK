@@ -14,13 +14,13 @@ import org.gradle.internal.reflect.Instantiator
  *
  * @author zhengtao
  */
-public class TaskHookerManager {
+public abstract class TaskHookerManager {
 
-    private Map<String, GradleTaskHooker> taskHookerMap = new HashMap<>()
+    protected Map<String, GradleTaskHooker> taskHookerMap = new HashMap<>()
 
-    private Project project
-    private AppExtension android
-    private Instantiator instantiator
+    protected Project project
+    protected AppExtension android
+    protected Instantiator instantiator
 
     public TaskHookerManager(Project project, Instantiator instantiator) {
         this.project = project
@@ -29,25 +29,9 @@ public class TaskHookerManager {
         project.gradle.addListener(new VirtualApkTaskListener())
     }
 
-    public void registerTaskHookers() {
-        android.applicationVariants.all { ApplicationVariantImpl appVariant ->
-            if (!appVariant.buildType.name.equalsIgnoreCase("release")) {
-                return
-            }
+    public abstract void registerTaskHookers()
 
-            registerTaskHooker(instantiator.newInstance(PrepareDependenciesHooker, project, appVariant))
-            registerTaskHooker(instantiator.newInstance(MergeAssetsHooker, project, appVariant))
-            registerTaskHooker(instantiator.newInstance(MergeManifestsHooker, project, appVariant))
-            registerTaskHooker(instantiator.newInstance(MergeJniLibsHooker, project, appVariant))
-//            registerTaskHooker(instantiator.newInstance(ShrinkResourcesHooker, project, appVariant))
-            registerTaskHooker(instantiator.newInstance(ProcessResourcesHooker, project, appVariant))
-            registerTaskHooker(instantiator.newInstance(ProguardHooker, project, appVariant))
-            registerTaskHooker(instantiator.newInstance(DxTaskHooker, project, appVariant))
-        }
-    }
-
-
-    private void registerTaskHooker(GradleTaskHooker taskHooker) {
+    protected void registerTaskHooker(GradleTaskHooker taskHooker) {
         taskHooker.setTaskHookerManager(this)
         taskHookerMap.put(taskHooker.taskName, taskHooker)
     }
