@@ -84,7 +84,7 @@ class VAPlugin extends BasePlugin {
             err.append('    virtualApk {\n')
             err.append('        packageId = 0xXX \n')
             err.append('    }\n')
-            err.append('apply for the value of packageId, please contact with zhengtao@didichuxing.com\n')
+            err.append('apply for the value of packageId.\n')
             throw new InvalidUserDataException(err.toString())
         }
 

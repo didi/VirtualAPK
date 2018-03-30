@@ -31,7 +31,7 @@ install {
                     developer {
                         id 'zhengtao'    //填写的一些基本信息
                         name 'DiDi'
-                        email 'zhengtao@didichuxing.com'
+                        email 'zhengtao620@gmail.com'
                     }
                 }
                 scm {
