@@ -101,6 +101,9 @@ class VAPlugin extends BasePlugin {
             err.append('apply for the value of packageId, please contact with zhengtao@didichuxing.com\n')
             throw new InvalidUserDataException(err.toString())
         }
+        if (packageId >= 0x7f || packageId <= 0x01) {
+            throw new IllegalArgumentException('the packageId must be in [0x02, 0x7E].')
+        }
 
         String targetHost = virtualApk.targetHost
         if (!targetHost) {
