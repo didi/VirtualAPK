@@ -1,5 +1,6 @@
 package com.didi.virtualapk
 
+import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.TaskContainerAdaptor
 import com.android.build.gradle.internal.TaskFactory
@@ -74,7 +75,7 @@ public abstract class BasePlugin implements Plugin<Project> {
                 throw new RuntimeException('Evaluating VirtualApk\'s configurations has failed!')
             }
 
-            project.android.applicationVariants.each { ApplicationVariantImpl variant ->
+            android.applicationVariants.each { ApplicationVariantImpl variant ->
                 if ('release' == variant.buildType.name) {
                     String variantAssembleTaskName = variant.variantData.scope.getTaskName('assemble', 'Plugin')
                     def final variantPluginTaskName = createPluginTaskName(variantAssembleTaskName)
@@ -144,5 +145,9 @@ public abstract class BasePlugin implements Plugin<Project> {
 
     protected final VAExtention getVirtualApk() {
         return this.project.virtualApk
+    }
+
+    protected final AppExtension getAndroid() {
+        return this.project.android
     }
 }

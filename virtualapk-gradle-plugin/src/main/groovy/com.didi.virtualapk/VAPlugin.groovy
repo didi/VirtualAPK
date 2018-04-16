@@ -53,7 +53,18 @@ class VAPlugin extends BasePlugin {
             println "Skipped all VirtualApk's configurations!"
             return
         }
-        project.android.registerTransform(new StripClassAndResTransform(project))
+        android.registerTransform(new StripClassAndResTransform(project))
+
+        android.defaultConfig.buildConfigField("int", "PACKAGE_ID", "0x" + Integer.toHexString(virtualApk.packageId))
+    }
+
+    File getJarPath() {
+        URL url = this.class.getResource("")
+        int index = url.path.indexOf('!')
+        if (index < 0) {
+            index = url.path.length()
+        }
+        return project.file(url.path.substring(0, index))
     }
 
     @Override
@@ -73,7 +84,11 @@ class VAPlugin extends BasePlugin {
             taskHookerManager = new VATaskHookerManager(project, instantiator)
             taskHookerManager.registerTaskHookers()
 
-            project.android.applicationVariants.each { ApplicationVariantImpl variant ->
+            if (android.dataBinding.enabled) {
+                project.dependencies.add('annotationProcessor', project.files(jarPath.absolutePath))
+            }
+
+            android.applicationVariants.each { ApplicationVariantImpl variant ->
 
                 checkConfig()
 
