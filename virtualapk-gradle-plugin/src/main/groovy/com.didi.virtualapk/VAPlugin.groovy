@@ -11,6 +11,7 @@ import com.didi.virtualapk.hooker.ProguardHooker
 import com.didi.virtualapk.hooker.TaskHookerManager
 import com.didi.virtualapk.transform.StripClassAndResTransform
 import com.didi.virtualapk.utils.FileBinaryCategory
+import com.didi.virtualapk.utils.Log
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.internal.reflect.Instantiator
@@ -41,6 +42,8 @@ class VAPlugin extends BasePlugin {
      */
     private TaskHookerManager taskHookerManager
 
+    private StripClassAndResTransform stripClassAndResTransform
+
     @Inject
     public VAPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         super(instantiator, registry)
@@ -50,10 +53,11 @@ class VAPlugin extends BasePlugin {
     protected void beforeCreateAndroidTasks(boolean isBuildingPlugin) {
         this.isBuildingPlugin = isBuildingPlugin
         if (!isBuildingPlugin) {
-            println "Skipped all VirtualApk's configurations!"
+            Log.i 'Plugin', "Skipped all VirtualApk's configurations!"
             return
         }
-        android.registerTransform(new StripClassAndResTransform(project))
+        stripClassAndResTransform = new StripClassAndResTransform(project)
+        android.registerTransform(stripClassAndResTransform)
 
         android.defaultConfig.buildConfigField("int", "PACKAGE_ID", "0x" + Integer.toHexString(virtualApk.packageId))
     }
@@ -81,6 +85,7 @@ class VAPlugin extends BasePlugin {
                 return
             }
 
+            stripClassAndResTransform.onProjectAfterEvaluate()
             taskHookerManager = new VATaskHookerManager(project, instantiator)
             taskHookerManager.registerTaskHookers()
 

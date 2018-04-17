@@ -1,9 +1,11 @@
 package com.didi.virtualapk.transform
 
 import com.android.build.api.transform.*
+import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.didi.virtualapk.VAExtention
 import com.didi.virtualapk.collector.HostClassAndResCollector
+import com.didi.virtualapk.utils.Log
 import groovy.io.FileType
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
@@ -21,6 +23,12 @@ class StripClassAndResTransform extends Transform {
         this.project = project
         this.virtualApk = project.virtualApk
         classAndResCollector = new HostClassAndResCollector()
+    }
+
+    void onProjectAfterEvaluate() {
+        project.android.applicationVariants.each { ApplicationVariant variant ->
+            virtualApk.checkList.addCheckPoint(variant.name, name)
+        }
     }
 
     @Override
@@ -57,36 +65,38 @@ class StripClassAndResTransform extends Transform {
 
         transformInvocation.inputs.each {
             it.directoryInputs.each { directoryInput ->
-//                println "input dir: ${directoryInput.file.absoluteFile}"
+//                Log.i 'StripClassAndResTransform', "input dir: ${directoryInput.file.absoluteFile}"
                 def destDir = transformInvocation.outputProvider.getContentLocation(
                         directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
-//                println "output dir: ${destDir.absoluteFile}"
+//                Log.i 'StripClassAndResTransform', "output dir: ${destDir.absoluteFile}"
                 directoryInput.file.traverse(type: FileType.FILES) {
                     def entryName = it.path.substring(directoryInput.file.path.length() + 1)
-//                    println "found file: ${it.absoluteFile}"
-//                    println "entryName: ${entryName}"
+//                    Log.i 'StripClassAndResTransform', "found file: ${it.absoluteFile}"
+//                    Log.i 'StripClassAndResTransform', "entryName: ${entryName}"
                     if (!stripEntries.contains(entryName)) {
                         def dest = new File(destDir, entryName)
                         FileUtils.copyFile(it, dest)
-//                        println "Copied to file: ${dest.absoluteFile}"
+//                        Log.i 'StripClassAndResTransform', "Copied to file: ${dest.absoluteFile}"
                     } else {
-                        println "Stripped file: ${it.absoluteFile}"
+                        Log.i 'StripClassAndResTransform', "Stripped file: ${it.absoluteFile}"
                     }
                 }
             }
 
             it.jarInputs.each { jarInput ->
-//                println "${name} jar: ${jarInput.file.absoluteFile}"
+//                Log.i 'StripClassAndResTransform', "${name} jar: ${jarInput.file.absoluteFile}"
                 Set<String> jarEntries = HostClassAndResCollector.unzipJar(jarInput.file)
                 if (!stripEntries.containsAll(jarEntries)){
                     def dest = transformInvocation.outputProvider.getContentLocation(jarInput.name,
                             jarInput.contentTypes, jarInput.scopes, Format.JAR)
                     FileUtils.copyFile(jarInput.file, dest)
-//                    println "Copied to jar: ${dest.absoluteFile}"
+//                    Log.i 'StripClassAndResTransform', "Copied to jar: ${dest.absoluteFile}"
                 } else {
-                    println "Stripped jar: ${jarInput.file.absoluteFile}"
+                    Log.i 'StripClassAndResTransform', "Stripped jar: ${jarInput.file.absoluteFile}"
                 }
             }
         }
+
+        virtualApk.checkList.mark(transformInvocation.context.variantName, name)
     }
 }

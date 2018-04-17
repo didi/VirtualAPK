@@ -4,6 +4,7 @@ import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.scope.TaskOutputHolder
 import com.android.build.gradle.tasks.MergeManifests
 import com.didi.virtualapk.collector.dependence.DependenceInfo
+import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
 import groovy.xml.QName
 import groovy.xml.XmlUtil
@@ -47,7 +48,7 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
                 } as Set<String>
 
         Reflect reflect = Reflect.on(task)
-        ArtifactCollection manifests = new FixedArtifactCollection(reflect.get('manifests'), stripAarNames)
+        ArtifactCollection manifests = new FixedArtifactCollection(this, reflect.get('manifests'), stripAarNames)
         reflect.set('manifests', manifests)
     }
 
@@ -79,11 +80,13 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
     }
     
     private static class FixedArtifactCollection implements ArtifactCollection {
-        
+
+        private MergeManifestsHooker hooker
         private ArtifactCollection origin
         def stripAarNames
         
-        FixedArtifactCollection(ArtifactCollection origin, stripAarNames) {
+        FixedArtifactCollection(MergeManifestsHooker hooker, ArtifactCollection origin, stripAarNames) {
+            this.hooker = hooker
             this.origin = origin
             this.stripAarNames = stripAarNames
         }
@@ -123,12 +126,13 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
                 boolean test(ResolvedArtifactResult result) {
                     boolean ret = stripAarNames.contains("${result.id.componentIdentifier.displayName}")
                     if (ret) {
-                        println "Stripped manifest of artifact: ${result} -> ${result.file}"
+                        Log.i 'MergeManifestsHooker', "Stripped manifest of artifact: ${result} -> ${result.file}"
                     }
                     return ret
                 }
             })
-            
+
+            hooker.mark()
             return set
         }
 

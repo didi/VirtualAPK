@@ -31,6 +31,8 @@ public abstract class GradleTaskHooker<T extends Task> {
         this.project = project
         this.apkVariant = apkVariant
         this.virtualApk = project.virtualApk
+
+        virtualApk.checkList.addCheckPoint(apkVariant.name, taskName)
     }
 
     public Project getProject() {
@@ -53,6 +55,10 @@ public abstract class GradleTaskHooker<T extends Task> {
         return this.virtualApk
     }
 
+    public void mark() {
+        virtualApk.checkList.mark(apkVariant.name, taskName)
+    }
+
     public void setTaskHookerManager(TaskHookerManager taskHookerManager) {
         this.taskHookerManager = taskHookerManager
     }
@@ -66,9 +72,18 @@ public abstract class GradleTaskHooker<T extends Task> {
     }
 
     /**
-     * Return the task name or transform name of the hooked task(transform task)
+     * Return the transform name of the hooked task(transform task)
      */
-    public abstract String getTaskName()
+    public String getTransformName() {
+        return ""
+    }
+
+    /**
+     * Return the task name(exclude transform task)
+     */
+    public String getTaskName() {
+        return "${transformName}For${apkVariant.name.capitalize()}"
+    }
 
     /**
      * Callback function before the hooked task executes

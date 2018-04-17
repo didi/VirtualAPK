@@ -22,7 +22,7 @@ class ProguardHooker extends GradleTaskHooker<TransformTask> {
     }
 
     @Override
-    String getTaskName() {
+    String getTransformName() {
         return "proguard"
     }
 
@@ -71,6 +71,7 @@ class ProguardHooker extends GradleTaskHooker<TransformTask> {
                 }
             }
         }
+        mark()
     }
 
     @Override

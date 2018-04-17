@@ -3,6 +3,7 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.pipeline.TransformTask
+import com.didi.virtualapk.utils.Log
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionListener
@@ -45,10 +46,10 @@ public abstract class TaskHookerManager {
 
         @Override
         void beforeExecute(Task task) {
-//            println "beforeExecute ${task.name} tid: ${Thread.currentThread().id} t: ${Thread.currentThread().name}"
+//            Log.i 'TaskHookerManager', "beforeExecute ${task.name} tid: ${Thread.currentThread().id} t: ${Thread.currentThread().name}"
             if (task.project == project) {
                 if (task in TransformTask) {
-                    taskHookerMap[task.transform.name]?.beforeTaskExecute(task)
+                    taskHookerMap["${task.transform.name}For${task.variantName.capitalize()}".toString()]?.beforeTaskExecute(task)
                 } else {
                     taskHookerMap[task.name]?.beforeTaskExecute(task)
                 }
@@ -57,10 +58,10 @@ public abstract class TaskHookerManager {
 
         @Override
         void afterExecute(Task task, TaskState taskState) {
-//            println "afterExecute ${task.name} tid: ${Thread.currentThread().id} t: ${Thread.currentThread().name}"
+//            Log.i 'TaskHookerManager', "afterExecute ${task.name} tid: ${Thread.currentThread().id} t: ${Thread.currentThread().name}"
             if (task.project == project) {
                 if (task in TransformTask) {
-                    taskHookerMap[task.transform.name]?.afterTaskExecute(task)
+                    taskHookerMap["${task.transform.name}For${task.variantName.capitalize()}".toString()]?.afterTaskExecute(task)
                 } else {
                     taskHookerMap[task.name]?.afterTaskExecute(task)
                 }

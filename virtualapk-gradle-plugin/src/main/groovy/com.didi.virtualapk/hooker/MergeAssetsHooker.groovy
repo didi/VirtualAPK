@@ -4,6 +4,7 @@ import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.ide.common.res2.AssetSet
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
+import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
 import org.gradle.api.Project
 
@@ -41,7 +42,7 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
         }
 
         Reflect reflect = Reflect.on(task)
-        reflect.set('assetSetSupplier', new FixedSupplier(reflect.get('assetSetSupplier'), strippedAssetPaths))
+        reflect.set('assetSetSupplier', new FixedSupplier(this, reflect.get('assetSetSupplier'), strippedAssetPaths))
     }
 
     @Override
@@ -50,10 +51,12 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
     
     static class FixedSupplier implements Supplier<List<AssetSet>> {
 
+        MergeAssetsHooker hooker
         Supplier<List<AssetSet>> origin
         Set<String> strippedAssetPaths
         
-        FixedSupplier(Supplier<List<AssetSet>> origin, Set<String> strippedAssetPaths) {
+        FixedSupplier(MergeAssetsHooker hooker, Supplier<List<AssetSet>> origin, Set<String> strippedAssetPaths) {
+            this.hooker = hooker
             this.origin = origin
             this.strippedAssetPaths = strippedAssetPaths
         }
@@ -66,11 +69,12 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
                 boolean test(AssetSet assetSet) {
                     boolean ret = strippedAssetPaths.contains(assetSet.sourceFiles.get(0).path)
                     if (ret) {
-                        println "Stripped asset of artifact: ${assetSet} -> ${assetSet.sourceFiles.get(0).path}"
+                        Log.i 'MergeAssetsHooker', "Stripped asset of artifact: ${assetSet} -> ${assetSet.sourceFiles.get(0).path}"
                     }
                     return ret
                 }
             })
+            hooker.mark()
             return assetSets
         }
     }

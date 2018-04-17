@@ -11,6 +11,7 @@ import com.didi.virtualapk.collector.ResourceCollector
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
 import com.didi.virtualapk.utils.FileUtil
+import com.didi.virtualapk.utils.Log
 import com.google.common.collect.ListMultimap
 import com.google.common.io.Files
 import org.gradle.api.Project
@@ -136,6 +137,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         }
 
         updateRJava(aapt, par.sourceOutputDir)
+        mark()
     }
 
     /**
@@ -160,18 +162,18 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
 
         def rSourceFile = new File(sourceOutputDir, "${virtualApk.packagePath}${File.separator}R.java")
         aapt.generateRJava(rSourceFile, apkVariant.applicationId, resourceCollector.allResources, resourceCollector.allStyleables)
-        println "Updated R.java: ${rSourceFile.absoluteFile}"
+        Log.i 'ProcessResourcesHooker', "Updated R.java: ${rSourceFile.absoluteFile}"
 
         def splitRSourceFile = new File(vaBuildDir, "source${File.separator}r${File.separator}${virtualApk.packagePath}${File.separator}R.java")
         aapt.generateRJava(splitRSourceFile, apkVariant.applicationId, resourceCollector.pluginResources, resourceCollector.pluginStyleables)
-        println "Updated R.java: ${splitRSourceFile.absoluteFile}"
+        Log.i 'ProcessResourcesHooker', "Updated R.java: ${splitRSourceFile.absoluteFile}"
         virtualApk.splitRJavaFile = splitRSourceFile
 
         virtualApk.retainedAarLibs.each {
             def aarPackage = it.package
             def rJavaFile = new File(sourceOutputDir, "${aarPackage.replace('.'.charAt(0), File.separatorChar)}${File.separator}R.java")
             aapt.generateRJava(rJavaFile, aarPackage, it.aarResources, it.aarStyleables)
-            println "Updated R.java: ${rJavaFile.absoluteFile}"
+            Log.i 'ProcessResourcesHooker', "Updated R.java: ${rJavaFile.absoluteFile}"
         }
     }
 

@@ -6,6 +6,7 @@ import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesTransform
 import com.didi.virtualapk.transform.TransformWrapper
+import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
 import org.gradle.api.Project
 
@@ -16,7 +17,7 @@ class ShrinkResourcesHooker extends GradleTaskHooker<TransformTask> {
     }
     
     @Override
-    String getTaskName() {
+    String getTransformName() {
         return "shrinkRes"
     }
     
@@ -26,8 +27,9 @@ class ShrinkResourcesHooker extends GradleTaskHooker<TransformTask> {
         Reflect.on(task).set('transform', new TransformWrapper(shrinkResourcesTransform) {
             @Override
             void transform(TransformInvocation invocation) throws TransformException, InterruptedException, IOException {
-                println "sourceDir: ${Reflect.on(origin).get('sourceDir')}"
+                Log.i 'ShrinkResourcesHooker', "sourceDir: ${Reflect.on(origin).get('sourceDir')}"
                 super.transform(invocation)
+                mark()
             }
         })
     }

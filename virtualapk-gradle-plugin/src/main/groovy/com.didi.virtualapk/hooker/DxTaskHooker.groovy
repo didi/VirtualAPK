@@ -2,6 +2,7 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
+import com.didi.virtualapk.utils.Log
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.Project
 
@@ -18,7 +19,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     }
 
     @Override
-    String getTaskName() {
+    String getTransformName() {
         return "dex"
     }
 
@@ -31,7 +32,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     @Override
     void beforeTaskExecute(TransformTask task) {
         task.inputs.files.each { input ->
-//            println "${task.name}: ${input.absoluteFile}"
+//            Log.i 'DxTaskHooker', "${task.name}: ${input.absoluteFile}"
             if(input.directory) {
                 input.eachFileRecurse { file ->
                     handleFile(file)
@@ -46,7 +47,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
         if (file.directory && file.path.endsWith(virtualApk.packagePath)) {
 
             if (recompileSplitR(file)) {
-                println "Recompiled R.java in dir: ${file.absoluteFile}"
+                Log.i 'DxTaskHooker', "Recompiled R.java in dir: ${file.absoluteFile}"
             }
 
         } else if (file.file && file.name.endsWith('.jar')) {
@@ -61,7 +62,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
             File pkgDir = new File(unzipJarDir, virtualApk.packagePath)
             if (pkgDir.exists()) {
                 if (recompileSplitR(pkgDir)) {
-                    println "Recompiled R.java in jar: ${file.absoluteFile}"
+                    Log.i 'DxTaskHooker', "Recompiled R.java in jar: ${file.absoluteFile}"
                     File backupDir = new File(virtualApk.getBuildDir(scope), 'origin/classes')
                     backupDir.deleteDir()
                     project.copy {
@@ -105,6 +106,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
                 target: apkVariant.javaCompiler.targetCompatibility,
                 destdir: new File(baseDir))
 
+            mark()
             return true
         }
 

@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
 import com.didi.virtualapk.tasks.AssemblePlugin
+import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
 import org.gradle.api.Action
 import org.gradle.api.Plugin
@@ -56,7 +57,7 @@ public abstract class BasePlugin implements Plugin<Project> {
                     Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         if ('preVariantWork' == method.name) {
                             checkVariantFactoryInvoked = true
-                            println "Evaluating VirtualApk's configurations..."
+                            Log.i 'Plugin', "Evaluating VirtualApk's configurations..."
                             boolean isBuildingPlugin = evaluateBuildingPlugin(appPlugin, project)
                             beforeCreateAndroidTasks(isBuildingPlugin)
                         }
@@ -123,7 +124,7 @@ public abstract class BasePlugin implements Plugin<Project> {
         }
 
 //        pluginTasks.each {
-//            println "pluginTask: ${it}"
+//            Log.i 'Plugin', "pluginTask: ${it}"
 //        }
 
         boolean isBuildingPlugin = false
@@ -131,7 +132,7 @@ public abstract class BasePlugin implements Plugin<Project> {
         targetTasks.every {
             String taskName = nameMatcher.find(it, pluginTasks)
             if (taskName != null) {
-//                println "Found task name '${taskName}' by given name '${it}'"
+//                Log.i 'Plugin', "Found task name '${taskName}' by given name '${it}'"
                 isBuildingPlugin = true
                 return false
             }

@@ -9,6 +9,7 @@ import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
 import com.didi.virtualapk.utils.FileUtil
+import com.didi.virtualapk.utils.Log
 import org.gradle.api.Project
 
 import java.util.function.Consumer
@@ -65,7 +66,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         Dependencies dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, new Consumer<SyncIssue>() {
             @Override
             void accept(SyncIssue syncIssue) {
-                println "Error: ${syncIssue}"
+                Log.i 'PrepareDependenciesHooker', "Error: ${syncIssue}"
             }
         })
 
@@ -113,10 +114,11 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         FileUtil.saveFile(hostDir, "${taskName}-stripDependencies", stripDependencies)
         FileUtil.saveFile(hostDir, "${taskName}-retainedAarLibs", retainedAarLibs)
         FileUtil.saveFile(hostDir, "${taskName}-retainedJarLib", retainedJarLib)
-        println "Analyzed all dependencis. Get more infomation in dir: ${hostDir.absoluteFile}"
+        Log.i 'PrepareDependenciesHooker', "Analyzed all dependencis. Get more infomation in dir: ${hostDir.absoluteFile}"
 
         virtualApk.stripDependencies = stripDependencies
         virtualApk.retainedAarLibs = retainedAarLibs
+        mark()
     }
 
 }
