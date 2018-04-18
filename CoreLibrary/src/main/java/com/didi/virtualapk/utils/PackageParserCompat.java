@@ -29,11 +29,26 @@ public final class PackageParserCompat {
 
     public static final PackageParser.Package parsePackage(final Context context, final File apk, final int flags) throws PackageParser.PackageParserException {
         if (Build.VERSION.SDK_INT >= 24) {
-            return PackageParserV24.parsePackage(context, apk, flags);
+            if (Build.VERSION.PREVIEW_SDK_INT == 0) {
+                return PackageParserV24.parsePackage(context, apk, flags);
+            } else {
+                return PackageParserPPreview.parsePackage(context, apk, flags);
+            }
         } else if (Build.VERSION.SDK_INT >= 21) {
             return PackageParserLollipop.parsePackage(context, apk, flags);
         } else {
             return PackageParserLegacy.parsePackage(context, apk, flags);
+        }
+    }
+
+    private static final class PackageParserPPreview {
+
+        static final PackageParser.Package parsePackage(Context context, File apk, int flags) throws PackageParser.PackageParserException {
+            PackageParser parser = new PackageParser();
+            PackageParser.Package pkg = parser.parsePackage(apk, flags);
+            ReflectUtil.invokeNoException(PackageParser.class, null, "collectCertificates",
+                    new Class[]{PackageParser.Package.class, boolean.class}, pkg, false);
+            return pkg;
         }
     }
 

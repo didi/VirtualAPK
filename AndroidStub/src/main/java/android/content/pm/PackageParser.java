@@ -377,6 +377,7 @@ public class PackageParser {
 
         // Signatures that were read from the package.
         public Signature[] mSignatures;
+        public SigningDetails mSigningDetails;
         public Certificate[][] mCertificates;
 
         // For use by package manager service for quick lookup of
@@ -736,6 +737,10 @@ public class PackageParser {
             throw new RuntimeException("Stub!");
         }
 
+    }
+    
+    public static class SigningDetails {
+        public Signature[] signatures;
     }
 
 }

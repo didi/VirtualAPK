@@ -15,7 +15,7 @@ buildscript {
 }
 
 ext {
-    VERSION_COMPILE_SDK = 23
+    VERSION_COMPILE_SDK = 'android-P'
     VERSION_BUILD_TOOLS = '25.0.2'
 
     VERSION_MIN_SDK = 15
