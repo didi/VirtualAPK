@@ -3,12 +3,12 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.android.build.gradle.internal.transforms.ProGuardTransform
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionListener
 import org.gradle.api.tasks.TaskState
 import org.gradle.internal.reflect.Instantiator
+
 /**
  * Manager of hookers, responsible for registration and scheduling execution
  *
@@ -33,10 +33,15 @@ public class TaskHookerManager {
     public void registerTaskHookers() {
         project.afterEvaluate {
             android.applicationVariants.all { ApplicationVariant appVariant ->
+                if (!appVariant.buildType.name.equalsIgnoreCase("release")) {
+                    return
+                }
+
                 registerTaskHooker(instantiator.newInstance(PrepareDependenciesHooker, project, appVariant))
                 registerTaskHooker(instantiator.newInstance(MergeAssetsHooker, project, appVariant))
                 registerTaskHooker(instantiator.newInstance(MergeManifestsHooker, project, appVariant))
                 registerTaskHooker(instantiator.newInstance(MergeJniLibsHooker, project, appVariant))
+//                registerTaskHooker(instantiator.newInstance(ShrinkResourcesHooker, project, appVariant))
                 registerTaskHooker(instantiator.newInstance(ProcessResourcesHooker, project, appVariant))
                 registerTaskHooker(instantiator.newInstance(ProguardHooker, project, appVariant))
                 registerTaskHooker(instantiator.newInstance(DxTaskHooker, project, appVariant))
@@ -60,6 +65,7 @@ public class TaskHookerManager {
 
         @Override
         void beforeExecute(Task task) {
+//            println "beforeExecute ${task.name} tid: ${Thread.currentThread().id} t: ${Thread.currentThread().name}"
             if (task.project == project) {
                 if (task in TransformTask) {
                     taskHookerMap[task.transform.name]?.beforeTaskExecute(task)
@@ -71,6 +77,7 @@ public class TaskHookerManager {
 
         @Override
         void afterExecute(Task task, TaskState taskState) {
+//            println "afterExecute ${task.name} tid: ${Thread.currentThread().id} t: ${Thread.currentThread().name}"
             if (task.project == project) {
                 if (task in TransformTask) {
                     taskHookerMap[task.transform.name]?.afterTaskExecute(task)

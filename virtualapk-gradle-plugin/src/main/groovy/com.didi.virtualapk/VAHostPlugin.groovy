@@ -1,12 +1,14 @@
 package com.didi.virtualapk
 
 import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.ProGuardTransform
-import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.didi.virtualapk.utils.FileUtil;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
+import com.android.build.gradle.tasks.ProcessAndroidResources
+import com.didi.virtualapk.utils.FileUtil
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 
 /**
  * VirtualAPK gradle plugin for host project,
@@ -57,8 +59,13 @@ public class VAHostPlugin implements Plugin<Project> {
                 project.configurations.each {
                     String configName = it.name
 
+                    if (!it.canBeResolved) {
+                        deps.add("${configName} -> NOT READY")
+                        return
+                    }
+
                     it.resolvedConfiguration.resolvedArtifacts.each {
-                        deps.add("${configName} -> ${it.moduleVersion.id}")
+                        deps.add("${configName} -> id: ${it.moduleVersion.id}, type: ${it.type}, ext: ${it.extension}")
                     }
                 }
                 Collections.sort(deps)
@@ -67,7 +74,9 @@ public class VAHostPlugin implements Plugin<Project> {
 
             FileUtil.saveFile(vaHostDir, "versions", {
                 List<String> deps = new ArrayList<String>()
-                project.configurations.getByName("_${applicationVariant.name}Compile").resolvedConfiguration.resolvedArtifacts.each {
+                Configuration compileClasspath = ((ApplicationVariantImpl) applicationVariant).variantData.variantDependency.compileClasspath
+                println "Used compileClasspath: ${compileClasspath.name}"
+                compileClasspath.resolvedConfiguration.resolvedArtifacts.each {
                     deps.add("${it.moduleVersion.id} ${it.file.length()}")
                 }
                 Collections.sort(deps)
@@ -86,7 +95,7 @@ public class VAHostPlugin implements Plugin<Project> {
 
         aaptTask.doLast {
             project.copy {
-                from new File(aaptTask.textSymbolOutputDir, 'R.txt')
+                from aaptTask.textSymbolOutputFile
                 into vaHostDir
                 rename { "Host_R.txt" }
             }

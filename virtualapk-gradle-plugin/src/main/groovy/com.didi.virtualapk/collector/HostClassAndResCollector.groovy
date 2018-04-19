@@ -38,7 +38,7 @@ class HostClassAndResCollector {
     def flatToJarFiles(Collection<DependenceInfo> stripDependencies, Collection<File> jarFiles) {
         stripDependencies.each {
             jarFiles.add(it.jarFile)
-            if (it in AarDependenceInfo) {
+            if (it instanceof AarDependenceInfo) {
                 it.localJars.each {
                     jarFiles.add(it)
                 }

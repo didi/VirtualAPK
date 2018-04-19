@@ -59,7 +59,7 @@ class ResourceCollector {
 
         processResTask = par
 
-        allRSymbolFile = new File(par.textSymbolOutputDir, 'R.txt')
+        allRSymbolFile = par.textSymbolOutputFile
         hostRSymbolFile = virtualApk.hostSymbolFile
     }
 
@@ -184,7 +184,9 @@ class ResourceCollector {
             List<String> values = styleableEntry.valueAsList
             values.eachWithIndex { hexResId, idx ->
                 ResourceEntry resEntry = attrEntries.find { it.hexResourceId == hexResId }
-                values[idx] = resEntry?.hexNewResourceId
+                if (resEntry != null) {
+                    values[idx] = resEntry.hexNewResourceId
+                }
             }
             styleableEntry.value = values
         }

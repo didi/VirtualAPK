@@ -107,6 +107,9 @@ public class AssetEditor extends CppHexEditor {
         s.styleLens = []
         s.styleStringIds = [] as HashSet //string pool index of array item b ...
         s.isUtf8 = (s.flags & ResStringFlag.UTF8_FLAG) != 0
+        byte[] eof = new byte[s.isUtf8 ? 1 : 2]
+        Arrays.fill(eof, (byte) 0x0)
+        s.stringsEOF = eof
 
         // Read offsets
         for (int i = 0; i < s.stringCount; i++) {
@@ -123,8 +126,8 @@ public class AssetEditor extends CppHexEditor {
             def len = decodeLength(s.isUtf8)
             s.stringLens[i] = len.data
             s.strings[i] = readBytes(len.value)
-            s.stringsSize += len.value + len.data.length + 1 // 1 for 0x0
-            skip(1) // 0x0
+            s.stringsSize += len.value + len.data.length + eof.length // len for 0x0
+            skip(eof.length) // 0x0
         }
 
         def endPos = pos + s.header.size
@@ -207,7 +210,7 @@ public class AssetEditor extends CppHexEditor {
         s.strings.eachWithIndex { it, i ->
             writeBytes(s.stringLens[i])
             writeBytes(it)
-            writeByte(0x0)
+            writeBytes(s.stringsEOF)
         }
         if (s.stringPadding > 0) writeBytes(new byte[s.stringPadding])
 
@@ -363,7 +366,7 @@ public class AssetEditor extends CppHexEditor {
             def lenData = sp.stringLens[it]
             lens.add(lenData)
             def l = s.length
-            stringOffset += l + lenData.length + 1 // 1 for 0x0
+            stringOffset += l + lenData.length + sp.stringsEOF.length // len for 0x0
         }
         def newStringCount = strings.size()
         def d = (sp.stringCount - newStringCount) * 4

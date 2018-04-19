@@ -17,6 +17,7 @@
 package com.didi.virtualapk.internal;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.app.Instrumentation;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -89,6 +90,82 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         }
 
         return result;
+    }
+
+    public ActivityResult execStartActivity(
+            Context who, IBinder contextThread, IBinder token, Fragment target,
+            Intent intent, int requestCode, Bundle options) {
+        mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
+        // null component is an implicitly intent
+        if (intent.getComponent() != null) {
+            Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(),
+                    intent.getComponent().getClassName()));
+            // resolve intent with Stub Activity if needed
+            this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
+        }
+
+        ActivityResult result = realExecStartActivity(who, contextThread, token, target,
+                intent, requestCode, options);
+
+        return result;
+
+    }
+
+    private ActivityResult realExecStartActivity(
+            Context who, IBinder contextThread, IBinder token, Fragment target,
+            Intent intent, int requestCode, Bundle options) {
+        ActivityResult result = null;
+        try {
+            Class[] parameterTypes = {Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class,
+                    int.class, Bundle.class};
+            result = (ActivityResult)ReflectUtil.invoke(Instrumentation.class, mBase,
+                    "execStartActivity", parameterTypes,
+                    who, contextThread, token, target, intent, requestCode, options);
+        } catch (Exception e) {
+            if (e.getCause() instanceof ActivityNotFoundException) {
+                throw (ActivityNotFoundException) e.getCause();
+            }
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    private ActivityResult realExecStartActivity(
+            Context who, IBinder contextThread, IBinder token, String target,
+            Intent intent, int requestCode, Bundle options) {
+        ActivityResult result = null;
+        try {
+            Class[] parameterTypes = {Context.class, IBinder.class, IBinder.class, String.class, Intent.class,
+                    int.class, Bundle.class};
+            result = (ActivityResult)ReflectUtil.invoke(Instrumentation.class, mBase,
+                    "execStartActivity", parameterTypes,
+                    who, contextThread, token, target, intent, requestCode, options);
+        } catch (Exception e) {
+            if (e.getCause() instanceof ActivityNotFoundException) {
+                throw (ActivityNotFoundException) e.getCause();
+            }
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    public ActivityResult execStartActivity(
+            Context who, IBinder contextThread, IBinder token, String target,
+            Intent intent, int requestCode, Bundle options) {
+        mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
+        // null component is an implicitly intent
+        if (intent.getComponent() != null) {
+            Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(),
+                    intent.getComponent().getClassName()));
+            // resolve intent with Stub Activity if needed
+            this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
+        }
+
+        ActivityResult result = realExecStartActivity(who, contextThread, token, target,
+                intent, requestCode, options);
+        return null;
     }
 
     @Override
