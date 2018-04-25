@@ -16,25 +16,25 @@
 
 package com.didi.virtualapk.internal;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.Instrumentation;
-import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PersistableBundle;
 import android.util.Log;
-import android.view.ContextThemeWrapper;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.utils.PluginUtil;
-import com.didi.virtualapk.utils.ReflectUtil;
+import com.didi.virtualapk.utils.Reflector;
 
 
 /**
@@ -53,119 +53,38 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         this.mBase = base;
     }
 
-    public ActivityResult execStartActivity(
-            Context who, IBinder contextThread, IBinder token, Activity target,
-            Intent intent, int requestCode, Bundle options) {
+    @Override
+    public ActivityResult execStartActivity(Context who, IBinder contextThread, IBinder token, Activity target, Intent intent, int requestCode) {
+        injectIntent(intent);
+        return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context who, IBinder contextThread, IBinder token, Activity target, Intent intent, int requestCode, Bundle options) {
+        injectIntent(intent);
+        return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context who, IBinder contextThread, IBinder token, Fragment target, Intent intent, int requestCode, Bundle options) {
+        injectIntent(intent);
+        return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context who, IBinder contextThread, IBinder token, String target, Intent intent, int requestCode, Bundle options) {
+        injectIntent(intent);
+        return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
+    }
+    
+    private void injectIntent(Intent intent) {
         mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
         // null component is an implicitly intent
         if (intent.getComponent() != null) {
-            Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(),
-                    intent.getComponent().getClassName()));
+            Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(), intent.getComponent().getClassName()));
             // resolve intent with Stub Activity if needed
             this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
         }
-
-        ActivityResult result = realExecStartActivity(who, contextThread, token, target,
-                    intent, requestCode, options);
-
-        return result;
-
-    }
-
-    private ActivityResult realExecStartActivity(
-            Context who, IBinder contextThread, IBinder token, Activity target,
-            Intent intent, int requestCode, Bundle options) {
-        ActivityResult result = null;
-        try {
-            Class[] parameterTypes = {Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class,
-            int.class, Bundle.class};
-            result = (ActivityResult)ReflectUtil.invoke(Instrumentation.class, mBase,
-                    "execStartActivity", parameterTypes,
-                    who, contextThread, token, target, intent, requestCode, options);
-        } catch (Exception e) {
-            if (e.getCause() instanceof ActivityNotFoundException) {
-                throw (ActivityNotFoundException) e.getCause();
-            }
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    public ActivityResult execStartActivity(
-            Context who, IBinder contextThread, IBinder token, Fragment target,
-            Intent intent, int requestCode, Bundle options) {
-        mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
-        // null component is an implicitly intent
-        if (intent.getComponent() != null) {
-            Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(),
-                    intent.getComponent().getClassName()));
-            // resolve intent with Stub Activity if needed
-            this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
-        }
-
-        ActivityResult result = realExecStartActivity(who, contextThread, token, target,
-                intent, requestCode, options);
-
-        return result;
-
-    }
-
-    private ActivityResult realExecStartActivity(
-            Context who, IBinder contextThread, IBinder token, Fragment target,
-            Intent intent, int requestCode, Bundle options) {
-        ActivityResult result = null;
-        try {
-            Class[] parameterTypes = {Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class,
-                    int.class, Bundle.class};
-            result = (ActivityResult)ReflectUtil.invoke(Instrumentation.class, mBase,
-                    "execStartActivity", parameterTypes,
-                    who, contextThread, token, target, intent, requestCode, options);
-        } catch (Exception e) {
-            if (e.getCause() instanceof ActivityNotFoundException) {
-                throw (ActivityNotFoundException) e.getCause();
-            }
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    private ActivityResult realExecStartActivity(
-            Context who, IBinder contextThread, IBinder token, String target,
-            Intent intent, int requestCode, Bundle options) {
-        ActivityResult result = null;
-        try {
-            Class[] parameterTypes = {Context.class, IBinder.class, IBinder.class, String.class, Intent.class,
-                    int.class, Bundle.class};
-            result = (ActivityResult)ReflectUtil.invoke(Instrumentation.class, mBase,
-                    "execStartActivity", parameterTypes,
-                    who, contextThread, token, target, intent, requestCode, options);
-        } catch (Exception e) {
-            if (e.getCause() instanceof ActivityNotFoundException) {
-                throw (ActivityNotFoundException) e.getCause();
-            }
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    public ActivityResult execStartActivity(
-            Context who, IBinder contextThread, IBinder token, String target,
-            Intent intent, int requestCode, Bundle options) {
-        mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
-        // null component is an implicitly intent
-        if (intent.getComponent() != null) {
-            Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(),
-                    intent.getComponent().getClassName()));
-            // resolve intent with Stub Activity if needed
-            this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
-        }
-
-        ActivityResult result = realExecStartActivity(who, contextThread, token, target,
-                intent, requestCode, options);
-        return null;
     }
 
     @Override
@@ -185,7 +104,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
 
                 try {
                     // for 4.1+
-                    ReflectUtil.setField(ContextThemeWrapper.class, activity, "mResources", plugin.getResources());
+                    Reflector.with(activity).field("mResources").set(plugin.getResources());
                 } catch (Exception ignored) {
                     // ignored.
                 }
@@ -199,15 +118,27 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
 
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
+        injectActivity(activity);
+        mBase.callActivityOnCreate(activity, icicle);
+    }
+    
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public void callActivityOnCreate(Activity activity, Bundle icicle, PersistableBundle persistentState) {
+        injectActivity(activity);
+        mBase.callActivityOnCreate(activity, icicle, persistentState);
+    }
+    
+    private void injectActivity(Activity activity) {
         final Intent intent = activity.getIntent();
         if (PluginUtil.isIntentFromPlugin(intent)) {
             Context base = activity.getBaseContext();
             try {
                 LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);
-                ReflectUtil.setField(base.getClass(), base, "mResources", plugin.getResources());
-                ReflectUtil.setField(ContextWrapper.class, activity, "mBase", plugin.getPluginContext());
-                ReflectUtil.setField(Activity.class, activity, "mApplication", plugin.getApplication());
-                ReflectUtil.setFieldNoException(ContextThemeWrapper.class, activity, "mBase", plugin.getPluginContext());
+                Reflector.with(base).field("mResources").set(plugin.getResources());
+                Reflector reflector = Reflector.with(activity);
+                reflector.field("mBase").set(plugin.getPluginContext());
+                reflector.field("mApplication").set(plugin.getApplication());
 
                 // set screenOrientation
                 ActivityInfo activityInfo = plugin.getActivityInfo(PluginUtil.getComponent(intent));
@@ -217,10 +148,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
-
-        mBase.callActivityOnCreate(activity, icicle);
     }
 
     @Override
@@ -229,9 +157,10 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             // ActivityClientRecord r
             Object r = msg.obj;
             try {
-                Intent intent = (Intent) ReflectUtil.getField(r.getClass(), r, "intent");
+                Reflector reflector = Reflector.with(r);
+                Intent intent = reflector.field("intent").get();
                 intent.setExtrasClassLoader(VAInstrumentation.class.getClassLoader());
-                ActivityInfo activityInfo = (ActivityInfo) ReflectUtil.getField(r.getClass(), r, "activityInfo");
+                ActivityInfo activityInfo = reflector.field("activityInfo").get();
 
                 if (PluginUtil.isIntentFromPlugin(intent)) {
                     int theme = PluginUtil.getTheme(mPluginManager.getHostContext(), intent);

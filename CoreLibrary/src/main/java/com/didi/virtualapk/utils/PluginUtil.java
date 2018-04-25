@@ -30,7 +30,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.ContextThemeWrapper;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.Constants;
@@ -133,16 +132,17 @@ public class PluginUtil {
             final LoadedPlugin plugin = PluginManager.getInstance(activity).getLoadedPlugin(packageName);
             final Resources resources = plugin.getResources();
             if (resources != null) {
-                ReflectUtil.setField(base.getClass(), base, "mResources", resources);
+                Reflector.with(base).field("mResources").set(resources);
 
                 // copy theme
                 Resources.Theme theme = resources.newTheme();
                 theme.setTo(activity.getTheme());
-                int themeResource = (int)ReflectUtil.getField(ContextThemeWrapper.class, activity, "mThemeResource");
+                Reflector reflector = Reflector.with(activity);
+                int themeResource = reflector.field("mThemeResource").get();
                 theme.applyStyle(themeResource, true);
-                ReflectUtil.setField(ContextThemeWrapper.class, activity, "mTheme", theme);
+                reflector.field("mTheme").set(theme);
 
-                ReflectUtil.setField(ContextThemeWrapper.class, activity, "mResources", resources);
+                reflector.field("mResources").set(resources);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -161,10 +161,7 @@ public class PluginUtil {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             bundle.putBinder(key, value);
         } else {
-            try {
-                ReflectUtil.invoke(Bundle.class, bundle, "putIBinder", new Class[]{String.class, IBinder.class}, key, value);
-            } catch (Exception e) {
-            }
+            Reflector.QuietReflector.with(bundle).method("putIBinder", String.class, IBinder.class).call(key, value);
         }
     }
 
@@ -172,12 +169,8 @@ public class PluginUtil {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             return bundle.getBinder(key);
         } else {
-            try {
-                return (IBinder) ReflectUtil.invoke(Bundle.class, bundle, "getIBinder", key);
-            } catch (Exception e) {
-            }
-
-            return null;
+            return (IBinder) Reflector.QuietReflector.with(bundle)
+                .method("getIBinder", String.class).call(key);
         }
     }
     

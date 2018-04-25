@@ -16,6 +16,7 @@
 
 package com.didi.virtualapk.internal;
 
+import android.app.ActivityThread;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
@@ -24,7 +25,7 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 
 import com.didi.virtualapk.PluginManager;
-import com.didi.virtualapk.utils.ReflectUtil;
+import com.didi.virtualapk.utils.Reflector;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -40,16 +41,19 @@ class ResourcesManager {
         Resources newResources = null;
         AssetManager assetManager;
         try {
+            Reflector reflector = Reflector.on(AssetManager.class).method("addAssetPath", String.class);
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 assetManager = AssetManager.class.newInstance();
-                ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", hostContext.getApplicationInfo().sourceDir);
+                reflector.bind(assetManager);
+                reflector.call(hostContext.getApplicationInfo().sourceDir);
             } else {
                 assetManager = hostResources.getAssets();
+                reflector.bind(assetManager);
             }
-            ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", apk);
+            reflector.call(apk);
             List<LoadedPlugin> pluginList = PluginManager.getInstance(hostContext).getAllLoadedPlugins();
             for (LoadedPlugin plugin : pluginList) {
-                ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", plugin.getLocation());
+                reflector.call(plugin.getLocation());
             }
             if (isMiUi(hostResources)) {
                 newResources = MiUiResourcesCompat.createResources(hostResources, assetManager);
@@ -77,21 +81,27 @@ class ResourcesManager {
 
     public static void hookResources(Context base, Resources resources) {
         try {
-            ReflectUtil.setField(base.getClass(), base, "mResources", resources);
-            Object loadedApk = ReflectUtil.getPackageInfo(base);
-            ReflectUtil.setField(loadedApk.getClass(), loadedApk, "mResources", resources);
+            Reflector reflector = Reflector.with(base);
+            reflector.field("mResources").set(resources);
+            Object loadedApk = reflector.field("mPackageInfo").get();
+            Reflector.with(loadedApk).field("mResources").set(resources);
 
-            Object activityThread = ReflectUtil.getActivityThread(base);
-            Object resManager = ReflectUtil.getField(activityThread.getClass(), activityThread, "mResourcesManager");
+            Object activityThread = ActivityThread.currentActivityThread();
+            Object resManager;
+            if (Build.VERSION.SDK_INT >= 19) {
+                resManager = android.app.ResourcesManager.getInstance();
+            } else {
+                resManager = Reflector.with(activityThread).field("mResourcesManager").get();
+            }
             if (Build.VERSION.SDK_INT < 24) {
-                Map<Object, WeakReference<Resources>> map = (Map<Object, WeakReference<Resources>>) ReflectUtil.getField(resManager.getClass(), resManager, "mActiveResources");
+                Map<Object, WeakReference<Resources>> map = Reflector.with(resManager).field("mActiveResources").get();
                 Object key = map.keySet().iterator().next();
                 map.put(key, new WeakReference<>(resources));
             } else {
                 // still hook Android N Resources, even though it's unnecessary, then nobody will be strange.
-                Map map = (Map) ReflectUtil.getFieldNoException(resManager.getClass(), resManager, "mResourceImpls");
+                Map map = Reflector.QuietReflector.with(resManager).field("mResourceImpls").get();
                 Object key = map.keySet().iterator().next();
-                Object resourcesImpl = ReflectUtil.getFieldNoException(Resources.class, resources, "mResourcesImpl");
+                Object resourcesImpl = Reflector.QuietReflector.with(resources).field("mResourcesImpl").get();
                 map.put(key, new WeakReference<>(resourcesImpl));
             }
         } catch (Exception e) {
@@ -117,34 +127,30 @@ class ResourcesManager {
 
     private static final class MiUiResourcesCompat {
         private static Resources createResources(Resources hostResources, AssetManager assetManager) throws Exception {
-            Class resourcesClazz = Class.forName("android.content.res.MiuiResources");
-            Resources newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
-                    new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
-                    new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
+            Reflector reflector = Reflector.on("android.content.res.MiuiResources");
+            Resources newResources = reflector.constructor(AssetManager.class, DisplayMetrics.class, Configuration.class)
+                .newInstance(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
             return newResources;
         }
     }
 
     private static final class VivoResourcesCompat {
         private static Resources createResources(Context hostContext, Resources hostResources, AssetManager assetManager) throws Exception {
-            Class resourcesClazz = Class.forName("android.content.res.VivoResources");
-            Resources newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
-                    new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
-                    new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
-            ReflectUtil.invokeNoException(resourcesClazz, newResources, "init",
-                    new Class[]{String.class}, hostContext.getPackageName());
-            Object themeValues = ReflectUtil.getFieldNoException(resourcesClazz, hostResources, "mThemeValues");
-            ReflectUtil.setFieldNoException(resourcesClazz, newResources, "mThemeValues", themeValues);
+            Reflector reflector = Reflector.on("android.content.res.VivoResources");
+            Resources newResources = reflector.constructor(AssetManager.class, DisplayMetrics.class, Configuration.class)
+                .newInstance(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
+            reflector.method("init", String.class).callByCaller(newResources, hostContext.getPackageName());
+            reflector.field("mThemeValues");
+            reflector.set(newResources, reflector.get(hostResources));
             return newResources;
         }
     }
 
     private static final class NubiaResourcesCompat {
         private static Resources createResources(Resources hostResources, AssetManager assetManager) throws Exception {
-            Class resourcesClazz = Class.forName("android.content.res.NubiaResources");
-            Resources newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
-                    new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
-                    new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
+            Reflector reflector = Reflector.on("android.content.res.NubiaResources");
+            Resources newResources = reflector.constructor(AssetManager.class, DisplayMetrics.class, Configuration.class)
+                .newInstance(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
             return newResources;
         }
     }
@@ -153,10 +159,9 @@ class ResourcesManager {
         private static Resources createResources(Resources hostResources, AssetManager assetManager) throws Exception {
             Resources newResources;
             try {
-                Class resourcesClazz = hostResources.getClass();
-                newResources = (Resources) ReflectUtil.invokeConstructor(resourcesClazz,
-                        new Class[]{AssetManager.class, DisplayMetrics.class, Configuration.class},
-                        new Object[]{assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration()});
+                Reflector reflector = Reflector.with(hostResources);
+                newResources = reflector.constructor(AssetManager.class, DisplayMetrics.class, Configuration.class)
+                    .newInstance(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
             } catch (Exception e) {
                 newResources = new Resources(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
             }

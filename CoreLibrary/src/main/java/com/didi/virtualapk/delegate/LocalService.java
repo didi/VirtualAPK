@@ -33,7 +33,7 @@ import android.util.Log;
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.utils.PluginUtil;
-import com.didi.virtualapk.utils.ReflectUtil;
+import com.didi.virtualapk.utils.Reflector;
 
 import java.lang.reflect.Method;
 
@@ -87,7 +87,7 @@ public class LocalService extends Service {
         target.setExtrasClassLoader(plugin.getClassLoader());
         switch (command) {
             case EXTRA_COMMAND_START_SERVICE: {
-                ActivityThread mainThread = (ActivityThread)ReflectUtil.getActivityThread(getBaseContext());
+                ActivityThread mainThread = ActivityThread.currentActivityThread();
                 IApplicationThread appThread = mainThread.getApplicationThread();
                 Service service;
 
@@ -114,7 +114,7 @@ public class LocalService extends Service {
                 break;
             }
             case EXTRA_COMMAND_BIND_SERVICE: {
-                ActivityThread mainThread = (ActivityThread)ReflectUtil.getActivityThread(getBaseContext());
+                ActivityThread mainThread = ActivityThread.currentActivityThread();
                 IApplicationThread appThread = mainThread.getApplicationThread();
                 Service service = null;
 
@@ -141,11 +141,9 @@ public class LocalService extends Service {
                     IBinder serviceConnection = PluginUtil.getBinder(intent.getExtras(), "sc");
                     IServiceConnection iServiceConnection = IServiceConnection.Stub.asInterface(serviceConnection);
                     if (Build.VERSION.SDK_INT >= 26) {
-                        ReflectUtil.invokeNoException(IServiceConnection.class, iServiceConnection, "connected",
-                                new Class[]{ComponentName.class, IBinder.class, boolean.class},
-                                new Object[]{component, binder, false});
+                        iServiceConnection.connected(component, binder, false);
                     } else {
-                        iServiceConnection.connected(component, binder);
+                        Reflector.QuietReflector.with(iServiceConnection).method("connected", ComponentName.class, IBinder.class).call(component, binder);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

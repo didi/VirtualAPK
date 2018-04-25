@@ -46,8 +46,9 @@ public final class PackageParserCompat {
         static final PackageParser.Package parsePackage(Context context, File apk, int flags) throws PackageParser.PackageParserException {
             PackageParser parser = new PackageParser();
             PackageParser.Package pkg = parser.parsePackage(apk, flags);
-            ReflectUtil.invokeNoException(PackageParser.class, null, "collectCertificates",
-                    new Class[]{PackageParser.Package.class, boolean.class}, pkg, false);
+            Reflector.QuietReflector.with(parser)
+                .method("collectCertificates", PackageParser.Package.class, boolean.class)
+                .call(pkg, false);
             return pkg;
         }
     }
@@ -57,8 +58,9 @@ public final class PackageParserCompat {
         static final PackageParser.Package parsePackage(Context context, File apk, int flags) throws PackageParser.PackageParserException {
             PackageParser parser = new PackageParser();
             PackageParser.Package pkg = parser.parsePackage(apk, flags);
-            ReflectUtil.invokeNoException(PackageParser.class, null, "collectCertificates",
-                    new Class[]{PackageParser.Package.class, int.class}, pkg, flags);
+            Reflector.QuietReflector.with(parser)
+                .method("collectCertificates", PackageParser.Package.class, int.class)
+                .call(pkg, flags);
             return pkg;
         }
     }
@@ -83,8 +85,9 @@ public final class PackageParserCompat {
         static final PackageParser.Package parsePackage(Context context, File apk, int flags) {
             PackageParser parser = new PackageParser(apk.getAbsolutePath());
             PackageParser.Package pkg = parser.parsePackage(apk, apk.getAbsolutePath(), context.getResources().getDisplayMetrics(), flags);
-            ReflectUtil.invokeNoException(PackageParser.class, parser, "collectCertificates",
-                    new Class[]{PackageParser.Package.class, int.class}, pkg, flags);
+            Reflector.QuietReflector.with(parser)
+                .method("collectCertificates", PackageParser.Package.class, int.class)
+                .call(pkg, flags);
             return pkg;
         }
 

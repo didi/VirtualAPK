@@ -57,11 +57,10 @@ import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.utils.DexUtil;
 import com.didi.virtualapk.utils.PackageParserCompat;
 import com.didi.virtualapk.utils.PluginUtil;
-import com.didi.virtualapk.utils.ReflectUtil;
+import com.didi.virtualapk.utils.Reflector;
 import com.didi.virtualapk.utils.RunUtil;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -101,7 +100,7 @@ public final class LoadedPlugin {
     private static AssetManager createAssetManager(Context context, File apk) {
         try {
             AssetManager am = AssetManager.class.newInstance();
-            ReflectUtil.invoke(AssetManager.class, am, "addAssetPath", apk.getAbsolutePath());
+            Reflector.with(am).method("addAssetPath", String.class).call(apk.getAbsolutePath());
             return am;
         } catch (Exception e) {
             e.printStackTrace();
@@ -167,6 +166,7 @@ public final class LoadedPlugin {
         } else {
             this.mPackageInfo.signatures = this.mPackage.mSignatures;
         }
+        
         this.mPackageInfo.packageName = this.mPackage.packageName;
         if (pluginManager.getLoadedPlugin(mPackageInfo.packageName) != null) {
             throw new RuntimeException("plugin has already been loaded : " + mPackageInfo.packageName);
@@ -367,11 +367,7 @@ public final class LoadedPlugin {
     }
 
     public void setTheme(int resid) {
-        try {
-            ReflectUtil.setField(Resources.class, this.mResources, "mThemeResId", resid);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Reflector.QuietReflector.with(this.mResources).field("mThemeResId").set(resid);
     }
 
     private Application makeApplication(boolean forceDefaultAppClass, Instrumentation instrumentation) {
@@ -549,7 +545,7 @@ public final class LoadedPlugin {
         }
 
         @Override
-        public Intent getLaunchIntentForPackage(String packageName) {
+        public Intent getLaunchIntentForPackage(@NonNull String packageName) {
             LoadedPlugin plugin = mPluginManager.getLoadedPlugin(packageName);
             if (null != plugin) {
                 return plugin.getLaunchIntent();
@@ -558,9 +554,9 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getLaunchIntentForPackage(packageName);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-        public Intent getLeanbackLaunchIntentForPackage(String packageName) {
+        @Override
+        public Intent getLeanbackLaunchIntentForPackage(@NonNull String packageName) {
             LoadedPlugin plugin = mPluginManager.getLoadedPlugin(packageName);
             if (null != plugin) {
                 return plugin.getLeanbackLaunchIntent();
@@ -570,8 +566,20 @@ public final class LoadedPlugin {
         }
 
         @Override
-        public int[] getPackageGids(String packageName) throws NameNotFoundException {
+        public int[] getPackageGids(@NonNull String packageName) throws NameNotFoundException {
             return this.mHostPackageManager.getPackageGids(packageName);
+        }
+    
+        @TargetApi(Build.VERSION_CODES.N)
+        @Override
+        public int[] getPackageGids(String packageName, int flags) throws NameNotFoundException {
+            return this.mHostPackageManager.getPackageGids(packageName, flags);
+        }
+    
+        @TargetApi(Build.VERSION_CODES.N)
+        @Override
+        public int getPackageUid(String packageName, int flags) throws NameNotFoundException {
+            return this.mHostPackageManager.getPackageUid(packageName, flags);
         }
 
         @Override
@@ -649,8 +657,8 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getInstalledPackages(flags);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+        @Override
         public List<PackageInfo> getPackagesHoldingPermissions(String[] permissions, int flags) {
             return this.mHostPackageManager.getPackagesHoldingPermissions(permissions, flags);
         }
@@ -658,6 +666,12 @@ public final class LoadedPlugin {
         @Override
         public int checkPermission(String permName, String pkgName) {
             return this.mHostPackageManager.checkPermission(permName, pkgName);
+        }
+
+        @TargetApi(Build.VERSION_CODES.M)
+        @Override
+        public boolean isPermissionRevokedByPolicy(@NonNull String permName, @NonNull String pkgName) {
+            return this.mHostPackageManager.isPermissionRevokedByPolicy(permName, pkgName);
         }
 
         @Override
@@ -708,8 +722,8 @@ public final class LoadedPlugin {
     
         @TargetApi(Build.VERSION_CODES.O)
         @Override
-        public boolean isInstantApp(String s) {
-            return this.mHostPackageManager.isInstantApp(s);
+        public boolean isInstantApp(String packageName) {
+            return this.mHostPackageManager.isInstantApp(packageName);
         }
     
         @TargetApi(Build.VERSION_CODES.O)
@@ -733,8 +747,8 @@ public final class LoadedPlugin {
     
         @TargetApi(Build.VERSION_CODES.O)
         @Override
-        public void updateInstantAppCookie(@Nullable byte[] bytes) {
-            this.mHostPackageManager.updateInstantAppCookie(bytes);
+        public void updateInstantAppCookie(@Nullable byte[] cookie) {
+            this.mHostPackageManager.updateInstantAppCookie(cookie);
         }
     
         @Override
@@ -745,15 +759,15 @@ public final class LoadedPlugin {
         @TargetApi(Build.VERSION_CODES.O)
         @NonNull
         @Override
-        public List<SharedLibraryInfo> getSharedLibraries(int i) {
-            return this.mHostPackageManager.getSharedLibraries(i);
+        public List<SharedLibraryInfo> getSharedLibraries(int flags) {
+            return this.mHostPackageManager.getSharedLibraries(flags);
         }
     
         @TargetApi(Build.VERSION_CODES.O)
         @Nullable
         @Override
-        public ChangedPackages getChangedPackages(int i) {
-            return this.mHostPackageManager.getChangedPackages(i);
+        public ChangedPackages getChangedPackages(int sequenceNumber) {
+            return this.mHostPackageManager.getChangedPackages(sequenceNumber);
         }
     
         @Override
@@ -766,6 +780,12 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.hasSystemFeature(name);
         }
 
+        @TargetApi(Build.VERSION_CODES.N)
+        @Override
+        public boolean hasSystemFeature(String name, int version) {
+            return this.mHostPackageManager.hasSystemFeature(name, version);
+        }
+    
         @Override
         public ResolveInfo resolveActivity(Intent intent, int flags) {
             ResolveInfo resolveInfo = mPluginManager.resolveActivity(intent, flags);
@@ -840,7 +860,7 @@ public final class LoadedPlugin {
                 }
             }
 
-            List<ResolveInfo> all = new ArrayList<ResolveInfo>();
+            List<ResolveInfo> all = new ArrayList<>();
 
             List<ResolveInfo> pluginResolveInfos = mPluginManager.queryBroadcastReceivers(intent, flags);
             if (null != pluginResolveInfos && pluginResolveInfos.size() > 0) {
@@ -969,8 +989,8 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getActivityIcon(intent);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+        @Override
         public Drawable getActivityBanner(ComponentName component) throws NameNotFoundException {
             LoadedPlugin plugin = mPluginManager.getLoadedPlugin(component);
             if (null != plugin) {
@@ -980,8 +1000,8 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getActivityBanner(component);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+        @Override
         public Drawable getActivityBanner(Intent intent) throws NameNotFoundException {
             ResolveInfo ri = mPluginManager.resolveActivity(intent);
             if (null != ri) {
@@ -1017,8 +1037,8 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getApplicationIcon(packageName);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+        @Override
         public Drawable getApplicationBanner(ApplicationInfo info) {
             LoadedPlugin plugin = mPluginManager.getLoadedPlugin(info.packageName);
             if (null != plugin) {
@@ -1028,8 +1048,8 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getApplicationBanner(info);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+        @Override
         public Drawable getApplicationBanner(String packageName) throws NameNotFoundException {
             LoadedPlugin plugin = mPluginManager.getLoadedPlugin(packageName);
             if (null != plugin) {
@@ -1080,8 +1100,8 @@ public final class LoadedPlugin {
             return this.mHostPackageManager.getApplicationLogo(packageName);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+        @Override
         public Drawable getUserBadgedIcon(Drawable icon, UserHandle user) {
             return this.mHostPackageManager.getUserBadgedIcon(icon, user);
         }
@@ -1089,21 +1109,22 @@ public final class LoadedPlugin {
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         public Drawable getUserBadgeForDensity(UserHandle user, int density) {
             try {
-                Method method = PackageManager.class.getMethod("getUserBadgeForDensity", UserHandle.class, int.class);
-                return (Drawable) method.invoke(this.mHostPackageManager, user, density);
+                return Reflector.with(this.mHostPackageManager)
+                    .method("getUserBadgeForDensity", UserHandle.class, int.class)
+                    .call(user, density);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+        @Override
         public Drawable getUserBadgedDrawableForDensity(Drawable drawable, UserHandle user, Rect badgeLocation, int badgeDensity) {
             return this.mHostPackageManager.getUserBadgedDrawableForDensity(drawable, user, badgeLocation, badgeDensity);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+        @Override
         public CharSequence getUserBadgedLabel(CharSequence label, UserHandle user) {
             return this.mHostPackageManager.getUserBadgedLabel(label, user);
         }
@@ -1177,8 +1198,8 @@ public final class LoadedPlugin {
             this.mHostPackageManager.verifyPendingInstall(id, verificationCode);
         }
 
-        @Override
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+        @Override
         public void extendVerificationTimeout(int id, int verificationCodeAtTimeout, long millisecondsToDelay) {
             this.mHostPackageManager.extendVerificationTimeout(id, verificationCodeAtTimeout, millisecondsToDelay);
         }
@@ -1229,7 +1250,7 @@ public final class LoadedPlugin {
         }
 
         @Override
-        public int getPreferredActivities(List<IntentFilter> outFilters, List<ComponentName> outActivities, String packageName) {
+        public int getPreferredActivities(@NonNull List<IntentFilter> outFilters, @NonNull List<ComponentName> outActivities, String packageName) {
             return this.mHostPackageManager.getPreferredActivities(outFilters, outActivities, packageName);
         }
 
@@ -1260,13 +1281,13 @@ public final class LoadedPlugin {
     
         @TargetApi(Build.VERSION_CODES.O)
         @Override
-        public void setApplicationCategoryHint(@NonNull String s, int i) {
-            this.mHostPackageManager.setApplicationCategoryHint(s, i);
+        public void setApplicationCategoryHint(@NonNull String packageName, int categoryHint) {
+            this.mHostPackageManager.setApplicationCategoryHint(packageName, categoryHint);
         }
     
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
-        public PackageInstaller getPackageInstaller() {
+        public @NonNull PackageInstaller getPackageInstaller() {
             return this.mHostPackageManager.getPackageInstaller();
         }
     
@@ -1274,31 +1295,6 @@ public final class LoadedPlugin {
         @Override
         public boolean canRequestPackageInstalls() {
             return this.mHostPackageManager.canRequestPackageInstalls();
-        }
-    
-        @TargetApi(24)
-        public int[] getPackageGids(String s, int i) throws NameNotFoundException {
-            return mHostPackageManager.getPackageGids(s);
-        }
-
-        public int getPackageUid(String s, int i) throws NameNotFoundException {
-            Object uid = ReflectUtil.invokeNoException(PackageManager.class, mHostPackageManager, "getPackageUid",
-                    new Class[]{String.class, int.class}, s, i);
-            if (uid != null) {
-                return (int) uid;
-            } else {
-                throw new NameNotFoundException(s);
-            }
-        }
-
-        @TargetApi(23)
-        public boolean isPermissionRevokedByPolicy(String s, String s1) {
-            return false;
-        }
-
-        @TargetApi(24)
-        public boolean hasSystemFeature(String s, int i) {
-            return mHostPackageManager.hasSystemFeature(s);
         }
     }
 

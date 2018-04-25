@@ -28,24 +28,25 @@ import android.content.IContentProvider;
 import android.content.Intent;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
-import android.databinding.DataBinderMapperProxy;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.util.Log;
 import android.util.Singleton;
 
-import com.didi.virtualapk.delegate.IContentProviderProxy;
-import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.delegate.ActivityManagerProxy;
+import com.didi.virtualapk.delegate.IContentProviderProxy;
 import com.didi.virtualapk.internal.ComponentsHandler;
 import com.didi.virtualapk.internal.LoadedPlugin;
+import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.internal.VAInstrumentation;
 import com.didi.virtualapk.utils.PluginUtil;
-import com.didi.virtualapk.utils.ReflectUtil;
+import com.didi.virtualapk.utils.Reflector;
 import com.didi.virtualapk.utils.RunUtil;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -94,7 +95,6 @@ public class PluginManager {
     }
 
     private void prepare() {
-        Systems.sHostContext = getHostContext();
         this.hookInstrumentationAndHandler();
         this.hookSystemServices();
         hookDataBindingUtil();
@@ -114,16 +114,16 @@ public class PluginManager {
     }
     
     private void hookDataBindingUtil() {
-        try {
-            Class cls = Class.forName("android.databinding.DataBindingUtil");
-            Object old = ReflectUtil.getField(cls, null, "sMapper");
-            Callback callback = new DataBinderMapperProxy(old);
-            ReflectUtil.setField(cls, null, "sMapper", callback);
-            
-            addCallback(callback);
-    
-        } catch (Exception e) {
-            e.printStackTrace();
+        Reflector.QuietReflector reflector = Reflector.QuietReflector.on("android.databinding.DataBindingUtil").field("sMapper");
+        Object old = reflector.get();
+        if (old != null) {
+            try {
+                Callback callback = Reflector.on("android.databinding.DataBinderMapperProxy").constructor().newInstance();
+                reflector.set(callback);
+                addCallback(callback);
+            } catch (Reflector.ReflectedException e) {
+                e.printStackTrace();
+            }
         }
     }
     
@@ -144,14 +144,14 @@ public class PluginManager {
             Singleton<IActivityManager> defaultSingleton;
     
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManager.class, null, "IActivityManagerSingleton");
+                defaultSingleton = Reflector.on(ActivityManager.class).field("IActivityManagerSingleton").get();
             } else {
-                defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManagerNative.class, null, "gDefault");
+                defaultSingleton = Reflector.on(ActivityManagerNative.class).field("gDefault").get();
             }
             IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
 
             // Hook IActivityManager from ActivityManagerNative
-            ReflectUtil.setField(defaultSingleton.getClass().getSuperclass(), defaultSingleton, "mInstance", activityManagerProxy);
+            Reflector.with(defaultSingleton).field("mInstance").set(activityManagerProxy);
 
             if (defaultSingleton.get() == activityManagerProxy) {
                 this.mActivityManager = activityManagerProxy;
@@ -163,16 +163,18 @@ public class PluginManager {
 
     private void hookInstrumentationAndHandler() {
         try {
-            Instrumentation baseInstrumentation = ReflectUtil.getInstrumentation(this.mContext);
+            ActivityThread activityThread = ActivityThread.currentActivityThread();
+            Instrumentation baseInstrumentation = activityThread.getInstrumentation();
             if (baseInstrumentation.getClass().getName().contains("lbe")) {
                 // reject executing in paralell space, for example, lbe.
                 System.exit(0);
             }
-
+    
             final VAInstrumentation instrumentation = new VAInstrumentation(this, baseInstrumentation);
-            Object activityThread = ReflectUtil.getActivityThread(this.mContext);
-            ReflectUtil.setInstrumentation(activityThread, instrumentation);
-            ReflectUtil.setHandlerCallback(this.mContext, instrumentation);
+            
+            Reflector.with(activityThread).field("mInstrumentation").set(instrumentation);
+            Handler mainHandler = Reflector.with(activityThread).method("getHandler").call();
+            Reflector.with(mainHandler).field("mCallback").set(instrumentation);
             this.mInstrumentation = instrumentation;
         } catch (Exception e) {
             e.printStackTrace();
@@ -185,8 +187,8 @@ public class PluginManager {
         try {
             Field authority = null;
             Field mProvider = null;
-            ActivityThread activityThread = (ActivityThread) ReflectUtil.getActivityThread(mContext);
-            Map mProviderMap = (Map) ReflectUtil.getField(activityThread.getClass(), activityThread, "mProviderMap");
+            ActivityThread activityThread = ActivityThread.currentActivityThread();
+            Map mProviderMap = Reflector.with(activityThread).field("mProviderMap").get();
             Iterator iter = mProviderMap.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
@@ -230,7 +232,9 @@ public class PluginManager {
         }
 
         if (!apk.exists()) {
-            throw new FileNotFoundException(apk.getAbsolutePath());
+            // throw the FileNotFoundException by opening a stream.
+            InputStream in = new FileInputStream(apk);
+            in.close();
         }
 
         LoadedPlugin plugin = LoadedPlugin.create(this, this.mContext, apk);
