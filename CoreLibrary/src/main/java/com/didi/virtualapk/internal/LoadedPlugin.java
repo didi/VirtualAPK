@@ -256,7 +256,14 @@ public final class LoadedPlugin {
     private void tryToCopyNativeLib(File apk) {
         Bundle metaData = this.mPackageInfo.applicationInfo.metaData;
         if (metaData != null && metaData.getBoolean("VA_IS_HAVE_LIB")) {
-            PluginUtil.copyNativeLib(apk, mHostContext, mPackageInfo, mNativeLibDir);
+            String cpuArch;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                cpuArch = Build.SUPPORTED_ABIS[0];
+            } else {
+                cpuArch = Build.CPU_ABI;
+            }
+            String defaultArch = metaData.getString("VA_DEFAULT_CPU_ARCH", cpuArch);
+            PluginUtil.copyNativeLib(apk, defaultArch, mHostContext, mPackageInfo, mNativeLibDir);
         }
     }
 
