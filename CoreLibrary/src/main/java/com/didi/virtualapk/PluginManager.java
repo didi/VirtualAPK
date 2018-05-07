@@ -69,7 +69,7 @@ public class PluginManager {
     private Map<String, LoadedPlugin> mPlugins = new ConcurrentHashMap<>();
     private final List<Callback> mCallbacks = new ArrayList<>();
 
-    private Instrumentation mInstrumentation; // Hooked instrumentation
+    private VAInstrumentation mInstrumentation; // Hooked instrumentation
     private IActivityManager mActivityManager; // Hooked IActivityManager binder
     private IContentProvider mIContentProvider; // Hooked IContentProvider binder
 
@@ -277,7 +277,7 @@ public class PluginManager {
         return this.mContext;
     }
 
-    public Instrumentation getInstrumentation() {
+    public VAInstrumentation getInstrumentation() {
         return this.mInstrumentation;
     }
 

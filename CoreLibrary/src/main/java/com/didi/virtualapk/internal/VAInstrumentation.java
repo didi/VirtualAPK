@@ -37,6 +37,10 @@ import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Created by renyugang on 16/8/10.
@@ -46,6 +50,8 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
     public static final int LAUNCH_ACTIVITY         = 100;
 
     private Instrumentation mBase;
+    
+    private final ArrayList<WeakReference<Activity>> mActivities = new ArrayList<>();
 
     PluginManager mPluginManager;
 
@@ -98,7 +104,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             ComponentName component = PluginUtil.getComponent(intent);
             
             if (component == null) {
-                return mBase.newActivity(cl, className, intent);
+                return newActivity(mBase.newActivity(cl, className, intent));
             }
     
             String targetClassName = component.getClassName();
@@ -107,7 +113,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(component);
     
             if (plugin == null) {
-                return mBase.newActivity(cl, className, intent);
+                return newActivity(mBase.newActivity(cl, className, intent));
             }
             
             Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
@@ -120,10 +126,10 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 // ignored.
             }
     
-            return activity;
+            return newActivity(activity);
         }
 
-        return mBase.newActivity(cl, className, intent);
+        return newActivity(mBase.newActivity(cl, className, intent));
     }
     
     @Override
@@ -152,7 +158,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);
                 Reflector.with(base).field("mResources").set(plugin.getResources());
                 Reflector reflector = Reflector.with(activity);
-                reflector.field("mBase").set(plugin.getPluginContext());
+                reflector.field("mBase").set(new PluginContext(plugin, activity.getBaseContext()));
                 reflector.field("mApplication").set(plugin.getApplication());
 
                 // set screenOrientation
@@ -207,4 +213,21 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         return mBase.getComponentName();
     }
 
+    private Activity newActivity(Activity activity) {
+        synchronized (mActivities) {
+            for (int i = mActivities.size() - 1; i >= 0; i--) {
+                if (mActivities.get(i).get() == null) {
+                    mActivities.remove(i);
+                }
+            }
+            mActivities.add(new WeakReference<>(activity));
+        }
+        return activity;
+    }
+
+    List<WeakReference<Activity>> getActivities() {
+        synchronized (mActivities) {
+            return new ArrayList<>(mActivities);
+        }
+    }
 }

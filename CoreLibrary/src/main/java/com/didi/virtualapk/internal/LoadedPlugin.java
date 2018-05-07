@@ -47,11 +47,12 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Looper;
 import android.os.Process;
 import android.os.UserHandle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
+import android.support.annotation.UiThread;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.utils.DexUtil;
@@ -108,12 +109,9 @@ public final class LoadedPlugin {
         }
     }
 
-    @WorkerThread
-    private static Resources createResources(Context context, File apk) {
+    private static Resources createResources(Context context, String packageName, File apk) throws Exception {
         if (Constants.COMBINE_RESOURCES) {
-            Resources resources = ResourcesManager.createResources(context, apk.getAbsolutePath());
-            ResourcesManager.hookResources(context, resources);
-            return resources;
+            return ResourcesManager.createResources(context, packageName, apk);
         } else {
             Resources hostResources = context.getResources();
             AssetManager assetManager = createAssetManager(context, apk);
@@ -145,7 +143,11 @@ public final class LoadedPlugin {
 
     private Application mApplication;
 
+    @UiThread
     LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws Exception {
+        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+            throw new RuntimeException("plugin mast be created by UI thread.");
+        }
         this.mPluginManager = pluginManager;
         this.mHostContext = context;
         this.mLocation = apk.getAbsolutePath();
@@ -177,7 +179,7 @@ public final class LoadedPlugin {
         this.mPackageManager = new PluginPackageManager();
         this.mPluginContext = new PluginContext(this);
         this.mNativeLibDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
-        this.mResources = createResources(context, apk);
+        this.mResources = createResources(context, getPackageName(), apk);
         this.mClassLoader = createClassLoader(context, apk, this.mNativeLibDir, context.getClassLoader());
 
         tryToCopyNativeLib(apk);
@@ -280,14 +282,13 @@ public final class LoadedPlugin {
     }
 
     public void invokeApplication() {
-        if (mApplication != null) {
-            return;
-        }
-
         // make sure application's callback is run on ui thread.
         RunUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if (mApplication != null) {
+                    return;
+                }
                 mApplication = makeApplication(false, mPluginManager.getInstrumentation());
             }
         }, true);

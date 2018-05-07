@@ -36,6 +36,11 @@ class PluginContext extends ContextWrapper {
         super(plugin.getPluginManager().getHostContext());
         this.mPlugin = plugin;
     }
+    
+    public PluginContext(LoadedPlugin plugin, Context base) {
+        super(base);
+        this.mPlugin = plugin;
+    }
 
     @Override
     public Context getApplicationContext() {
