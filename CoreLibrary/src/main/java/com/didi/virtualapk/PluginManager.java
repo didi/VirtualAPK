@@ -96,11 +96,7 @@ public class PluginManager {
     private void prepare() {
         Systems.sHostContext = getHostContext();
         this.hookInstrumentationAndHandler();
-        if (Build.VERSION.SDK_INT >= 26) {
-            this.hookAMSForO();
-        } else {
-            this.hookSystemServices();
-        }
+        this.hookSystemServices();
         hookDataBindingUtil();
     }
 
@@ -145,7 +141,13 @@ public class PluginManager {
      */
     private void hookSystemServices() {
         try {
-            Singleton<IActivityManager> defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManagerNative.class, null, "gDefault");
+            Singleton<IActivityManager> defaultSingleton;
+    
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManager.class, null, "IActivityManagerSingleton");
+            } else {
+                defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManagerNative.class, null, "gDefault");
+            }
             IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
 
             // Hook IActivityManager from ActivityManagerNative
@@ -154,17 +156,6 @@ public class PluginManager {
             if (defaultSingleton.get() == activityManagerProxy) {
                 this.mActivityManager = activityManagerProxy;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void hookAMSForO() {
-        try {
-            Singleton<IActivityManager> defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManager.class, null, "IActivityManagerSingleton");
-            IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
-            ReflectUtil.setField(defaultSingleton.getClass().getSuperclass(), defaultSingleton, "mInstance", activityManagerProxy);
         } catch (Exception e) {
             e.printStackTrace();
         }
