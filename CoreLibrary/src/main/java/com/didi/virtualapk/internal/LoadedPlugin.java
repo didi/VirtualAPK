@@ -47,7 +47,6 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Process;
 import android.os.UserHandle;
 import android.support.annotation.NonNull;
@@ -147,22 +146,7 @@ public final class LoadedPlugin {
 
     private Application mApplication;
 
-//    void dumpClass(Class cls) {
-//        Log.w(TAG, "########################################");
-//        Log.w(TAG, "cls: " + cls.getName());
-//        Log.w(TAG, "cls.super: " + cls.getSuperclass());
-//        Log.w(TAG, "field size: " + cls.getDeclaredFields().length);
-//        Log.w(TAG, "method size: " + cls.getDeclaredMethods().length);
-//
-//        for (Field f : cls.getDeclaredFields()) {
-//            Log.w(TAG, "field: " + f.getType().getName() + " " + f.getName());
-//        }
-//        for (Method m : cls.getDeclaredMethods()) {
-//            Log.w(TAG, "method: " + m.getReturnType() + " " + m.getName() + " " + Arrays.toString(m.getParameterTypes()));
-//        }
-//    }
-    
-    LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws PackageParser.PackageParserException {
+    LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws Exception {
         this.mPluginManager = pluginManager;
         this.mHostContext = context;
         this.mLocation = apk.getAbsolutePath();
@@ -172,14 +156,6 @@ public final class LoadedPlugin {
         this.mPackageInfo.applicationInfo = this.mPackage.applicationInfo;
         this.mPackageInfo.applicationInfo.sourceDir = apk.getAbsolutePath();
         
-//        dumpClass(PackageParser.class);
-//        dumpClass(this.mPackage.getClass());
-//        try {
-//            dumpClass(Class.forName("android.content.pm.PackageParser$SigningDetails"));
-//        } catch (ClassNotFoundException e) {
-//            Log.w(TAG, e);
-//        }
-    
         if (Build.VERSION.SDK_INT == 27 && Build.VERSION.PREVIEW_SDK_INT != 0) { // Android P Preview
             this.mPackageInfo.signatures = this.mPackage.mSigningDetails.signatures;
         } else {
@@ -239,25 +215,18 @@ public final class LoadedPlugin {
         Map<ComponentName, ActivityInfo> receivers = new HashMap<ComponentName, ActivityInfo>();
         for (PackageParser.Activity receiver : this.mPackage.receivers) {
             receivers.put(receiver.getComponentName(), receiver.info);
-
-            try {
-                BroadcastReceiver br = BroadcastReceiver.class.cast(getClassLoader().loadClass(receiver.getComponentName().getClassName()).newInstance());
-                for (PackageParser.ActivityIntentInfo aii : receiver.intents) {
-                    this.mHostContext.registerReceiver(br, aii);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+    
+            BroadcastReceiver br = BroadcastReceiver.class.cast(getClassLoader().loadClass(receiver.getComponentName().getClassName()).newInstance());
+            for (PackageParser.ActivityIntentInfo aii : receiver.intents) {
+                this.mHostContext.registerReceiver(br, aii);
             }
         }
         this.mReceiverInfos = Collections.unmodifiableMap(receivers);
         this.mPackageInfo.receivers = receivers.values().toArray(new ActivityInfo[receivers.size()]);
     }
 
-    private void tryToCopyNativeLib(File apk) {
-        Bundle metaData = this.mPackageInfo.applicationInfo.metaData;
-        if (metaData != null && metaData.getBoolean("VA_IS_HAVE_LIB")) {
-            PluginUtil.copyNativeLib(apk, mHostContext, mPackageInfo, mNativeLibDir);
-        }
+    private void tryToCopyNativeLib(File apk) throws Exception {
+        PluginUtil.copyNativeLib(apk, mHostContext, mPackageInfo, mNativeLibDir);
     }
 
     public String getLocation() {

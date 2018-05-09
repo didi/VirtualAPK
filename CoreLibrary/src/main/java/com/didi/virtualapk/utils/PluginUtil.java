@@ -23,15 +23,13 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.Keep;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 
 import com.didi.virtualapk.PluginManager;
@@ -46,10 +44,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -186,68 +180,98 @@ public class PluginUtil {
             return null;
         }
     }
-
-    public static void copyNativeLib(File apk, Context context, PackageInfo packageInfo, File nativeLibDir) {
+    
+    public static void copyNativeLib(File apk, Context context, PackageInfo packageInfo, File nativeLibDir) throws Exception {
+        long startTime = System.currentTimeMillis();
+        ZipFile zipfile = new ZipFile(apk.getAbsolutePath());
+    
         try {
-            String cpuArch;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                cpuArch = Build.SUPPORTED_ABIS[0];
-            } else {
-                cpuArch = Build.CPU_ABI;
-            }
-            boolean findSo = false;
-
-            ZipFile zipfile = new ZipFile(apk.getAbsolutePath());
-            ZipEntry entry;
-            Enumeration e = zipfile.entries();
-            while (e.hasMoreElements()) {
-                entry = (ZipEntry) e.nextElement();
-                if (entry.isDirectory())
-                    continue;
-                if(entry.getName().endsWith(".so") && entry.getName().contains("lib/" + cpuArch)){
-                    findSo = true;
-                    break;
-                }
-            }
-            e = zipfile.entries();
-            while (e.hasMoreElements()) {
-                entry = (ZipEntry) e.nextElement();
-                if (entry.isDirectory() || !entry.getName().endsWith(".so"))
-                    continue;
-                if((findSo && entry.getName().contains("lib/" + cpuArch)) || (!findSo && entry.getName().contains("lib/armeabi/"))){
-                    String[] temp = entry.getName().split("/");
-                    String libName = temp[temp.length - 1];
-                    System.out.println("verify so " + libName);
-                    File libFile = new File(nativeLibDir.getAbsolutePath() + File.separator + libName);
-                    String key = packageInfo.packageName + "_" + libName;
-                    if (libFile.exists()) {
-                        int VersionCode = Settings.getSoVersion(context, key);
-                        if (VersionCode == packageInfo.versionCode) {
-                            System.out.println("skip existing so : " + entry.getName());
-                            continue;
-                        }
+                for (String cpuArch : Build.SUPPORTED_ABIS) {
+                    if (findAndCopyNativeLib(zipfile, context, cpuArch, packageInfo, nativeLibDir)) {
+                        return;
                     }
-                    FileOutputStream fos = new FileOutputStream(libFile);
-                    System.out.println("copy so " + entry.getName() + " of " + cpuArch);
-                    copySo(zipfile.getInputStream(entry), fos);
-                    Settings.setSoVersion(context, key, packageInfo.versionCode);
                 }
-
+                
+            } else {
+                if (findAndCopyNativeLib(zipfile, context, Build.CPU_ABI, packageInfo, nativeLibDir)) {
+                    return;
+                }
             }
-
+            
+            findAndCopyNativeLib(zipfile, context, "armeabi", packageInfo, nativeLibDir);
+    
+        } finally {
             zipfile.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            Log.d("NativeLib", "Done! +" + (System.currentTimeMillis() - startTime) + "ms");
         }
     }
-
-    private static void copySo(InputStream input, OutputStream output) throws IOException {
+    
+    private static boolean findAndCopyNativeLib(ZipFile zipfile, Context context, String cpuArch, PackageInfo packageInfo, File nativeLibDir) throws Exception {
+        Log.d("NativeLib", "Try to copy plugin's cup arch: " + cpuArch);
+        boolean findLib = false;
+        boolean findSo = false;
+        byte buffer[] = null;
+        String libPrefix = "lib/" + cpuArch + "/";
+        ZipEntry entry;
+        Enumeration e = zipfile.entries();
+        
+        while (e.hasMoreElements()) {
+            entry = (ZipEntry) e.nextElement();
+            String entryName = entry.getName();
+            
+            if (entryName.charAt(0) < 'l') {
+                continue;
+            }
+            if (entryName.charAt(0) > 'l') {
+                break;
+            }
+            if (!findLib && !entryName.startsWith("lib/")) {
+                continue;
+            }
+            findLib = true;
+            if (!entryName.endsWith(".so") || !entryName.startsWith(libPrefix)) {
+                continue;
+            }
+    
+            if (buffer == null) {
+                findSo = true;
+                Log.d("NativeLib", "Found plugin's cup arch dir: " + cpuArch);
+                buffer = new byte[8192];
+            }
+            
+            String libName = entryName.substring(entryName.lastIndexOf('/') + 1);
+            Log.d("NativeLib", "verify so " + libName);
+            File libFile = new File(nativeLibDir, libName);
+            String key = packageInfo.packageName + "_" + libName;
+            if (libFile.exists()) {
+                int VersionCode = Settings.getSoVersion(context, key);
+                if (VersionCode == packageInfo.versionCode) {
+                    Log.d("NativeLib", "skip existing so : " + entry.getName());
+                    continue;
+                }
+            }
+            FileOutputStream fos = new FileOutputStream(libFile);
+            Log.d("NativeLib", "copy so " + entry.getName() + " of " + cpuArch);
+            copySo(buffer, zipfile.getInputStream(entry), fos);
+            Settings.setSoVersion(context, key, packageInfo.versionCode);
+        }
+        
+        if (!findLib) {
+            Log.d("NativeLib", "Fast skip all!");
+            return true;
+        }
+        
+        return findSo;
+    }
+    
+    private static void copySo(byte[] buffer, InputStream input, OutputStream output) throws IOException {
         BufferedInputStream bufferedInput = new BufferedInputStream(input);
         BufferedOutputStream bufferedOutput = new BufferedOutputStream(output);
         int count;
-        byte data[] = new byte[8192];
-        while ((count = bufferedInput.read(data, 0, 8192)) != -1) {
-            bufferedOutput.write(data, 0, count);
+        
+        while ((count = bufferedInput.read(buffer)) > 0) {
+            bufferedOutput.write(buffer, 0, count);
         }
         bufferedOutput.flush();
         bufferedOutput.close();
