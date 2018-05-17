@@ -155,9 +155,15 @@ public final class LoadedPlugin {
         this.mPackageInfo = new PackageInfo();
         this.mPackageInfo.applicationInfo = this.mPackage.applicationInfo;
         this.mPackageInfo.applicationInfo.sourceDir = apk.getAbsolutePath();
-        
-        if (Build.VERSION.SDK_INT == 27 && Build.VERSION.PREVIEW_SDK_INT != 0) { // Android P Preview
-            this.mPackageInfo.signatures = this.mPackage.mSigningDetails.signatures;
+    
+        if (Build.VERSION.SDK_INT >= 28
+            || (Build.VERSION.SDK_INT == 27 && Build.VERSION.PREVIEW_SDK_INT != 0)) { // Android P Preview
+            try {
+                this.mPackageInfo.signatures = this.mPackage.mSigningDetails.signatures;
+            } catch (Throwable e) {
+                PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
+                this.mPackageInfo.signatures = info.signatures;
+            }
         } else {
             this.mPackageInfo.signatures = this.mPackage.mSignatures;
         }
