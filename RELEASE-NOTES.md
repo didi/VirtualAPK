@@ -1,9 +1,9 @@
 # Release Notes
 
-## 0.9.0
+## com.didi.virtualapk:core:0.9.0
 开源的第一个版本，支持了几乎所有 Android 特性，目前已经被大家广泛使用。
 
-## 0.9.1
+## com.didi.virtualapk:core:0.9.1
 ##### 1. 最初，为了让程序更加健壮，当我们通过无效的 Intent 来启动插件中的 Activity，这个时候程序不会报错。尽管我们的初衷是好的，但现在我们觉得这种方式太过友好了，不利于bug的排查。
 
 ```改动```：现在，启动无效的 Activity 会直接抛出 ActivityNotFoundException。
@@ -26,4 +26,12 @@
 
 ```改动```：hook Android N 的资源，尽管是多余的。
 
+## com.didi.virtualapk:core:0.9.5
+1. 修复多个bug，强烈建议升级至此版本，以前版本不再维护。
+2. 与 com.didi.virtualapk:gradle:0.9.8.2 搭配使用，支持官方 Data Binding。
+
 ## VirtualAPK 的构建部分已经开源了，![点击这里查看](https://github.com/didi/VirtualAPK/tree/master/virtualapk-gradle-plugin)
+
+## com.didi.virtualapk:gradle:0.9.8.2
+1. 适配android gradle 3.0.0
+2. 修复多个bug，强烈建议升级至此版本，以前版本不再维护。
