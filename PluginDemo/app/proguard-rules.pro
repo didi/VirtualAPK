@@ -122,5 +122,5 @@
 -keep class com.didi.virtualapk.internal.PluginContentResolver { *; }
 
 -dontwarn com.didi.virtualapk.**
--dontwarn android.content.pm.**
+-dontwarn android.**
 -keep class android.** { *; }

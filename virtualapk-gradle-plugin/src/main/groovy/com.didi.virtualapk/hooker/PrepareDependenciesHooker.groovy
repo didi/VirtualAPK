@@ -1,16 +1,15 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.tasks.AppPreBuildTask
-import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.model.Dependencies
 import com.android.builder.model.SyncIssue
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
 import com.didi.virtualapk.utils.FileUtil
+import com.didi.virtualapk.utils.Log
 import org.gradle.api.Project
 
 import java.util.function.Consumer
@@ -36,7 +35,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
 
     @Override
     String getTaskName() {
-        return "pre${apkVariant.name.capitalize()}Build"
+        return scope.getTaskName('pre', 'Build')
     }
 
     /**
@@ -64,12 +63,10 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
      */
     @Override
     void afterTaskExecute(AppPreBuildTask task) {
-        BaseVariantData variantData = ((ApplicationVariantImpl) apkVariant).variantData
-
-        Dependencies dependencies = new ArtifactDependencyGraph().createDependencies(variantData.scope, false, new Consumer<SyncIssue>() {
+        Dependencies dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, new Consumer<SyncIssue>() {
             @Override
             void accept(SyncIssue syncIssue) {
-                println "Error: ${syncIssue}"
+                Log.i 'PrepareDependenciesHooker', "Error: ${syncIssue}"
             }
         })
 
@@ -113,14 +110,15 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
 
         }
 
-        File hostDir = task.fakeOutputDirectory
+        File hostDir = virtualApk.getBuildDir(scope)
         FileUtil.saveFile(hostDir, "${taskName}-stripDependencies", stripDependencies)
         FileUtil.saveFile(hostDir, "${taskName}-retainedAarLibs", retainedAarLibs)
         FileUtil.saveFile(hostDir, "${taskName}-retainedJarLib", retainedJarLib)
+        Log.i 'PrepareDependenciesHooker', "Analyzed all dependencis. Get more infomation in dir: ${hostDir.absoluteFile}"
 
-        virtualApk.variantData = variantData
         virtualApk.stripDependencies = stripDependencies
         virtualApk.retainedAarLibs = retainedAarLibs
+        mark()
     }
 
 }

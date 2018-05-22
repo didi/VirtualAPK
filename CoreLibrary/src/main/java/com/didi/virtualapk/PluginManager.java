@@ -28,6 +28,7 @@ import android.content.IContentProvider;
 import android.content.Intent;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
+import android.databinding.DataBinderMapperProxy;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -65,6 +66,7 @@ public class PluginManager {
     private Context mContext;
     private ComponentsHandler mComponentsHandler;
     private Map<String, LoadedPlugin> mPlugins = new ConcurrentHashMap<>();
+    private final List<Callback> mCallbacks = new ArrayList<>();
 
     private Instrumentation mInstrumentation; // Hooked instrumentation
     private IActivityManager mActivityManager; // Hooked IActivityManager binder
@@ -94,11 +96,8 @@ public class PluginManager {
     private void prepare() {
         Systems.sHostContext = getHostContext();
         this.hookInstrumentationAndHandler();
-        if (Build.VERSION.SDK_INT >= 26) {
-            this.hookAMSForO();
-        } else {
-            this.hookSystemServices();
-        }
+        this.hookSystemServices();
+        hookDataBindingUtil();
     }
 
     public void init() {
@@ -113,13 +112,42 @@ public class PluginManager {
 
     private void doInWorkThread() {
     }
+    
+    private void hookDataBindingUtil() {
+        try {
+            Class cls = Class.forName("android.databinding.DataBindingUtil");
+            Object old = ReflectUtil.getField(cls, null, "sMapper");
+            Callback callback = new DataBinderMapperProxy(old);
+            ReflectUtil.setField(cls, null, "sMapper", callback);
+            
+            addCallback(callback);
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void addCallback(Callback callback) {
+        if (callback == null) {
+            return;
+        }
+        synchronized (mCallbacks) {
+            mCallbacks.add(callback);
+        }
+    }
 
     /**
      * hookSystemServices, but need to compatible with Android O in future.
      */
     private void hookSystemServices() {
         try {
-            Singleton<IActivityManager> defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManagerNative.class, null, "gDefault");
+            Singleton<IActivityManager> defaultSingleton;
+    
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManager.class, null, "IActivityManagerSingleton");
+            } else {
+                defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManagerNative.class, null, "gDefault");
+            }
             IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
 
             // Hook IActivityManager from ActivityManagerNative
@@ -128,17 +156,6 @@ public class PluginManager {
             if (defaultSingleton.get() == activityManagerProxy) {
                 this.mActivityManager = activityManagerProxy;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void hookAMSForO() {
-        try {
-            Singleton<IActivityManager> defaultSingleton = (Singleton<IActivityManager>) ReflectUtil.getField(ActivityManager.class, null, "IActivityManagerSingleton");
-            IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
-            ReflectUtil.setField(defaultSingleton.getClass().getSuperclass(), defaultSingleton, "mInstance", activityManagerProxy);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -219,6 +236,11 @@ public class PluginManager {
         LoadedPlugin plugin = LoadedPlugin.create(this, this.mContext, apk);
         if (null != plugin) {
             this.mPlugins.put(plugin.getPackageName(), plugin);
+            synchronized (mCallbacks) {
+                for (int i = 0; i < mCallbacks.size(); i++) {
+                    mCallbacks.get(i).onAddedLoadedPlugin(plugin);
+                }
+            }
             // try to invoke plugin's application
             plugin.invokeApplication();
         } else {
@@ -357,4 +379,7 @@ public class PluginManager {
         return resolveInfos;
     }
 
+    public interface Callback {
+        void onAddedLoadedPlugin(LoadedPlugin plugin);
+    }
 }

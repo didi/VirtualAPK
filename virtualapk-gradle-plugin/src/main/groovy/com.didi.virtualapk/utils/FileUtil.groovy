@@ -24,4 +24,38 @@ public class FileUtil {
         file.write(list.join('\r\n'))
     }
     
+    public static boolean deleteEmptySubfolders(File dir) {
+        if(dir == null || !dir.exists()) {
+            return true;
+        }
+        if(!dir.isDirectory()) {
+            return false;
+        }
+        File[] files = dir.listFiles();
+
+        if (files == null || files.length == 0) {
+            return dir.delete();
+        }
+
+        boolean result = true;
+        int len = files.length;
+
+        for(int i = 0; i < len; ++i) {
+            File file = files[i];
+            if(file.isDirectory()) {
+                if(!deleteEmptySubfolders(file)) {
+                    result = false;
+                }
+            }
+        }
+
+        File[] updatedFiles = dir.listFiles();
+        if (updatedFiles == null || updatedFiles.length == 0) {
+            if (!dir.delete()) {
+                result = false;
+            }
+        }
+
+        return result;
+    }
 }

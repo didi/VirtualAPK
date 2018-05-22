@@ -173,12 +173,13 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         try {
             cl.loadClass(className);
         } catch (ClassNotFoundException e) {
-            LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);
-            String targetClassName = PluginUtil.getTargetActivity(intent);
+            ComponentName component = PluginUtil.getComponent(intent);
+            LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(component);
+            String targetClassName = component.getClassName();
 
-            Log.i(TAG, String.format("newActivity[%s : %s]", className, targetClassName));
+            Log.i(TAG, String.format("newActivity[%s : %s/%s]", className, component.getPackageName(), targetClassName));
 
-            if (targetClassName != null) {
+            if (plugin != null) {
                 Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
                 activity.setIntent(intent);
 

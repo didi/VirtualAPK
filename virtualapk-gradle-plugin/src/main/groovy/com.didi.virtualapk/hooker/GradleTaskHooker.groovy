@@ -1,6 +1,9 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.didi.virtualapk.VAExtention
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -28,19 +31,32 @@ public abstract class GradleTaskHooker<T extends Task> {
         this.project = project
         this.apkVariant = apkVariant
         this.virtualApk = project.virtualApk
+
+        virtualApk.checkList.addCheckPoint(apkVariant.name, taskName)
     }
 
     public Project getProject() {
         return this.project
     }
 
-
     public ApkVariant getApkVariant() {
         return this.apkVariant
     }
 
+    public BaseVariantData getVariantData() {
+        return ((ApplicationVariantImpl) this.apkVariant).variantData
+    }
+
+    public VariantScope getScope() {
+        return variantData.scope
+    }
+
     public VAExtention getVirtualApk() {
         return this.virtualApk
+    }
+
+    public void mark() {
+        virtualApk.checkList.mark(apkVariant.name, taskName)
     }
 
     public void setTaskHookerManager(TaskHookerManager taskHookerManager) {
@@ -56,9 +72,18 @@ public abstract class GradleTaskHooker<T extends Task> {
     }
 
     /**
-     * Return the task name or transform name of the hooked task(transform task)
+     * Return the transform name of the hooked task(transform task)
      */
-    public abstract String getTaskName()
+    public String getTransformName() {
+        return ""
+    }
+
+    /**
+     * Return the task name(exclude transform task)
+     */
+    public String getTaskName() {
+        return "${transformName}For${apkVariant.name.capitalize()}"
+    }
 
     /**
      * Callback function before the hooked task executes

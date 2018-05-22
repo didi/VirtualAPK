@@ -2,7 +2,7 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.google.common.io.Files
+import com.didi.virtualapk.utils.Log
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.Project
 
@@ -19,7 +19,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     }
 
     @Override
-    String getTaskName() {
+    String getTransformName() {
         return "dex"
     }
 
@@ -32,7 +32,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     @Override
     void beforeTaskExecute(TransformTask task) {
         task.inputs.files.each { input ->
-//            println "${task.name}: ${input.absoluteFile}"
+//            Log.i 'DxTaskHooker', "${task.name}: ${input.absoluteFile}"
             if(input.directory) {
                 input.eachFileRecurse { file ->
                     handleFile(file)
@@ -46,7 +46,9 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     void handleFile(File file) {
         if (file.directory && file.path.endsWith(virtualApk.packagePath)) {
 
-            recompileSplitR(file)
+            if (recompileSplitR(file)) {
+                Log.i 'DxTaskHooker', "Recompiled R.java in dir: ${file.absoluteFile}"
+            }
 
         } else if (file.file && file.name.endsWith('.jar')) {
             // Decompress jar file
@@ -59,9 +61,9 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
             // VirtualApk Package Dir
             File pkgDir = new File(unzipJarDir, virtualApk.packagePath)
             if (pkgDir.exists()) {
-                boolean compileResult = recompileSplitR(pkgDir)
-                if (compileResult) {
-                    File backupDir = new File(file.getParentFile(), 'original')
+                if (recompileSplitR(pkgDir)) {
+                    Log.i 'DxTaskHooker', "Recompiled R.java in jar: ${file.absoluteFile}"
+                    File backupDir = new File(virtualApk.getBuildDir(scope), 'origin/classes')
                     backupDir.deleteDir()
                     project.copy {
                         from file
@@ -104,6 +106,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
                 target: apkVariant.javaCompiler.targetCompatibility,
                 destdir: new File(baseDir))
 
+            mark()
             return true
         }
 

@@ -5,6 +5,7 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.didi.virtualapk.collector.HostJniLibsCollector
+import com.didi.virtualapk.utils.Log
 import org.gradle.api.Project
 
 /**
@@ -24,7 +25,7 @@ class MergeJniLibsHooker extends GradleTaskHooker<TransformTask> {
     }
 
     @Override
-    String getTaskName() {
+    String getTransformName() {
         return "mergeJniLibs"
     }
 
@@ -39,8 +40,10 @@ class MergeJniLibsHooker extends GradleTaskHooker<TransformTask> {
 
         excludeJniFiles.each {
             androidConfig.packagingOptions.exclude("/${it}")
+            Log.i 'MergeJniLibsHooker', "Stripped jni file: ${it}"
         }
 
+        mark()
 //        Reflect.on(task.transform)
 //                .set('packagingOptions', new ParsedPackagingOptions(androidConfig.packagingOptions))
     }

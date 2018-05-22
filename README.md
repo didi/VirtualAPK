@@ -28,7 +28,7 @@ Add a dependency in `build.gradle` in root of host project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.7'
+    classpath 'com.didi.virtualapk:gradle:0.9.8.2-dev'
 }
 ```
 
@@ -41,7 +41,7 @@ apply plugin: 'com.didi.virtualapk.host'
 Compile VirtualAPK in application module of `build.gradle`.
 
 ``` java
-compile 'com.didi.virtualapk:core:0.9.1'
+compile 'com.didi.virtualapk:core:0.9.5-dev'
 ```
 
 Initialize `PluginManager` in `YourApplication::attachBaseContext()`.
@@ -61,7 +61,7 @@ Modify proguard rules to keep VirtualAPK related files.
 -keep class com.didi.virtualapk.internal.PluginContentResolver { *; }
 
 -dontwarn com.didi.virtualapk.**
--dontwarn android.content.pm.**
+-dontwarn android.**
 -keep class android.** { *; }
 ```
 
@@ -85,7 +85,7 @@ Add a dependency in `build.gradle` in root of plugin project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.7'
+    classpath 'com.didi.virtualapk:gradle:0.9.8.2-dev'
 }
 ```
 
