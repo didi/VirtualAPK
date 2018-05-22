@@ -98,6 +98,9 @@ public abstract class BasePlugin implements Plugin<Project> {
     }
 
     String createPluginTaskName(String name) {
+        if (name == 'assembleReleasePlugin') {
+            return '_assemblePlugin'
+        }
         return name.replace('Release', '')
     }
 

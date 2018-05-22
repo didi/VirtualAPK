@@ -35,3 +35,7 @@
 ## com.didi.virtualapk:gradle:0.9.8.2
 1. 适配android gradle 3.0.0
 2. 修复多个bug，强烈建议升级至此版本，以前版本不再维护。
+3. 插件工程需要定义 productFlavors。
+
+## com.didi.virtualapk:gradle:0.9.8.3
+1. 兼容不定义 productFlavors 的配置。
