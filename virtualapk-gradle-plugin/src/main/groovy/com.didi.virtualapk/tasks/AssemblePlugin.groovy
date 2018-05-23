@@ -3,6 +3,7 @@ package com.didi.virtualapk.tasks
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
 import com.didi.virtualapk.VAExtention
+import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.TaskUtil
 import com.sun.istack.internal.NotNull
 import org.gradle.api.Action
@@ -43,6 +44,16 @@ public class AssemblePlugin extends DefaultTask {
     public void outputPluginApk() {
         VAExtention virtualApk = project.virtualApk
         virtualApk.getVaContext(variantName).checkList.check()
+        virtualApk.printWarning(name)
+
+        if (virtualApk.getFlag('tip.forceUseHostDependences')) {
+            def tip = new StringBuilder('To avoid configuration WARNINGs, you could set the forceUseHostDependences to be true in build.gradle,\n ')
+            tip.append('please declare it in application project build.gradle:\n')
+            tip.append('    virtualApk {\n')
+            tip.append('        forceUseHostDependences = true \n')
+            tip.append('    }\n')
+            Log.i name, tip.toString()
+        }
 
         getProject().copy {
             from originApkFile

@@ -1,19 +1,15 @@
 package com.didi.virtualapk
 
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
-import com.didi.virtualapk.hooker.DxTaskHooker
-import com.didi.virtualapk.hooker.MergeAssetsHooker
-import com.didi.virtualapk.hooker.MergeJniLibsHooker
-import com.didi.virtualapk.hooker.MergeManifestsHooker
-import com.didi.virtualapk.hooker.PrepareDependenciesHooker
-import com.didi.virtualapk.hooker.ProcessResourcesHooker
-import com.didi.virtualapk.hooker.ProguardHooker
-import com.didi.virtualapk.hooker.TaskHookerManager
+import com.didi.virtualapk.hooker.*
 import com.didi.virtualapk.transform.StripClassAndResTransform
 import com.didi.virtualapk.utils.FileBinaryCategory
 import com.didi.virtualapk.utils.Log
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.DependencyResolveDetails
+import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
@@ -36,6 +32,7 @@ class VAPlugin extends BasePlugin {
     private def hostDir
 
     protected boolean isBuildingPlugin = false
+    private boolean checked
 
     /**
      * TaskHooker manager, registers hookers when apply invoked
@@ -56,10 +53,56 @@ class VAPlugin extends BasePlugin {
             Log.i 'VAPlugin', "Skipped all VirtualApk's configurations!"
             return
         }
+
+        checkConfig()
+
         stripClassAndResTransform = new StripClassAndResTransform(project)
         android.registerTransform(stripClassAndResTransform)
 
         android.defaultConfig.buildConfigField("int", "PACKAGE_ID", "0x" + Integer.toHexString(virtualApk.packageId))
+
+        // Force using the versions of host dependencies
+        // check current project was the first subproject
+//        if (project.rootProject.subprojects.first() != project) {
+//            throw new RuntimeException("The project ':${project.name}' must be the first subproject when enabled \"virtualApk.forceUseHostDependences\" . " +
+//                    "You should modify the project's configuration explicitly in \"settings.gradle\" like this:\n\n" +
+//                    "include ':_${project.name}'\n" +
+//                    "project(':_${project.name}').projectDir = new File('./${project.name}')")
+//        }
+        HashSet<String> replacedSet = [] as HashSet
+        project.rootProject.subprojects { Project p ->
+            p.configurations.all { Configuration configuration ->
+                configuration.resolutionStrategy { ResolutionStrategy resolutionStrategy ->
+                    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                        if (!isBuildingPlugin) {
+                            return
+                        }
+
+                        checkConfig()
+
+                        def hostDependency = virtualApk.hostDependencies.get("${details.requested.group}:${details.requested.name}")
+                        if (hostDependency != null) {
+                            if ("${details.requested.version}" != "${hostDependency['version']}") {
+                                String key = "${p.name}:${details.requested}"
+                                if (!replacedSet.contains(key)) {
+                                    replacedSet.add(key)
+                                    if (virtualApk.forceUseHostDependences) {
+                                        Log.i 'Dependencies', "ATTENTION: Replaced module [${details.requested}] in project(:${p.name})'s configuration to host version: [${hostDependency['version']}]!"
+                                    } else {
+                                        virtualApk.addWarning "WARNING: [${details.requested}] in project(:${p.name})'s configuration will be occupied by Host App! Please change it to host version: [${hostDependency['group']}:${hostDependency['name']}:${hostDependency['version']}]."
+                                        virtualApk.setFlag('tip.forceUseHostDependences', true)
+                                    }
+                                }
+
+                                if (virtualApk.forceUseHostDependences) {
+                                    details.useVersion(hostDependency['version'])
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     File getJarPath() {
@@ -97,8 +140,6 @@ class VAPlugin extends BasePlugin {
 
             android.applicationVariants.each { ApplicationVariantImpl variant ->
 
-                checkConfig()
-
                 virtualApk.with {
                     VAExtention.VAContext vaContext = getVaContext(variant.name)
                     vaContext.packageName = variant.applicationId
@@ -113,6 +154,11 @@ class VAPlugin extends BasePlugin {
      * Check the plugin apk related config infos
      */
     private void checkConfig() {
+        if (checked) {
+            return
+        }
+        checked = true
+
         int packageId = virtualApk.packageId
         if (packageId == 0) {
             def err = new StringBuilder('you should set the packageId in build.gradle,\n ')

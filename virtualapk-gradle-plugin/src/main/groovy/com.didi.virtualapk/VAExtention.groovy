@@ -4,6 +4,7 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.utils.CheckList
+import com.didi.virtualapk.utils.Log
 
 /**
  * VirtualApk extension for plugin projects.
@@ -20,9 +21,14 @@ public class VAExtention {
     private boolean applyHostMapping = true
     /** Exclude dependent aar or jar **/
     private Collection<String> excludes = new HashSet<>()
+    private boolean forceUseHostDependences
+    private ArrayList<String> warningList = new ArrayList<>()
     /**  host dependence file - version.txt*/
     public File hostDependenceFile
+    //group:artifact -> group:artifact:version
+    private Map hostDependencies
 
+    private HashSet<String> flagTable = new HashSet<>()
 
     private final Map<String, VAContext> vaContextMap = [] as HashMap
 
@@ -71,6 +77,47 @@ public class VAExtention {
                 this.excludes.add(filter)
             }
         }
+    }
+
+    public boolean getForceUseHostDependences() {
+        return forceUseHostDependences
+    }
+
+    public void setForceUseHostDependences(boolean forceUseHostDependences) {
+        this.forceUseHostDependences = forceUseHostDependences
+    }
+
+    public Map getHostDependencies() {
+        if (hostDependencies == null) {
+            hostDependencies = [] as LinkedHashMap
+            hostDependenceFile.splitEachLine('\\s+', { columns ->
+                final def module = columns[0].split(':')
+                hostDependencies.put("${module[0]}:${module[1]}", [group: module[0], name: module[1], version: module[2]])
+            })
+        }
+        return hostDependencies
+    }
+
+    public void addWarning(String detail) {
+        warningList.add(detail)
+    }
+
+    public void printWarning(String tag) {
+        warningList.each {
+            Log.i(tag, it)
+        }
+    }
+
+    public void setFlag(String key, boolean value) {
+        if (value) {
+            flagTable.add(key)
+        } else {
+            flagTable.remove(key)
+        }
+    }
+
+    public boolean getFlag(String key) {
+        return flagTable.contains(key)
     }
 
     public static class VAContext {
