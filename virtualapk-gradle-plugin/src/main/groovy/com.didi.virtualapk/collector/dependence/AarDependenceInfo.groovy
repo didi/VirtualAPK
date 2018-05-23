@@ -1,6 +1,9 @@
 package com.didi.virtualapk.collector.dependence
 
+import com.android.SdkConstants
+import com.android.build.gradle.internal.TaskManager
 import com.android.builder.model.AndroidLibrary
+import com.android.utils.FileUtils
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
 import com.google.common.collect.ArrayListMultimap
@@ -65,6 +68,10 @@ class AarDependenceInfo extends DependenceInfo {
         def resKeys = [] as Set<String>
 
         def rSymbol = library.symbolFile
+        if (!rSymbol.exists()) {
+            // module library
+            rSymbol = FileUtils.join(intermediatesDir, TaskManager.DIR_BUNDLES, library.projectVariant, SdkConstants.FN_RESOURCE_TEXT)
+        }
         if (rSymbol.exists()) {
             rSymbol.eachLine { line ->
                 if (!line.empty) {
@@ -87,7 +94,24 @@ class AarDependenceInfo extends DependenceInfo {
      * @return package name of this library
      */
     public String getPackage() {
-        def xmlManifest = new XmlParser().parse(library.manifest)
+        File manifest
+        if (library.manifest.exists()) {
+            manifest = library.manifest
+        } else {
+            // module library
+            manifest = FileUtils.join(intermediatesDir, 'manifests', 'full', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
+        }
+        def xmlManifest = new XmlParser().parse(manifest)
         return xmlManifest.@package
+    }
+
+    File getIntermediatesDir() {
+        String path = library.folder.path
+        return new File(path.substring(0, path.indexOf("${File.separator}intermediates${File.separator}")), 'intermediates')
+    }
+
+    @Override
+    String toString() {
+        return "${super.toString()} -> ${library}"
     }
 }
