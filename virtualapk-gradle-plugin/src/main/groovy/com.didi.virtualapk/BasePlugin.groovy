@@ -57,7 +57,7 @@ public abstract class BasePlugin implements Plugin<Project> {
                     Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         if ('preVariantWork' == method.name) {
                             checkVariantFactoryInvoked = true
-                            Log.i 'Plugin', "Evaluating VirtualApk's configurations..."
+                            Log.i 'VAPlugin', "Evaluating VirtualApk's configurations..."
                             boolean isBuildingPlugin = evaluateBuildingPlugin(appPlugin, project)
                             beforeCreateAndroidTasks(isBuildingPlugin)
                         }
@@ -127,7 +127,7 @@ public abstract class BasePlugin implements Plugin<Project> {
         }
 
 //        pluginTasks.each {
-//            Log.i 'Plugin', "pluginTask: ${it}"
+//            Log.i 'VAPlugin', "pluginTask: ${it}"
 //        }
 
         boolean isBuildingPlugin = false
@@ -135,7 +135,7 @@ public abstract class BasePlugin implements Plugin<Project> {
         targetTasks.every {
             String taskName = nameMatcher.find(it, pluginTasks)
             if (taskName != null) {
-//                Log.i 'Plugin', "Found task name '${taskName}' by given name '${it}'"
+//                Log.i 'VAPlugin', "Found task name '${taskName}' by given name '${it}'"
                 isBuildingPlugin = true
                 return false
             }

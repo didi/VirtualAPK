@@ -6,6 +6,7 @@ import com.android.builder.model.AndroidLibrary
 import com.android.utils.FileUtils
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
+import com.didi.virtualapk.utils.Log
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
 import com.google.common.collect.Lists
@@ -39,6 +40,7 @@ class AarDependenceInfo extends DependenceInfo {
 
     @Override
     File getJarFile() {
+        Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s jar file: ${library.jarFile}"
         return library.jarFile
     }
 
@@ -48,14 +50,17 @@ class AarDependenceInfo extends DependenceInfo {
     }
     
     File getAssetsFolder() {
+        Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s assets folder: ${library.assetsFolder}"
         return library.assetsFolder
     }
 
     File getJniFolder() {
+        Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s jni folder: ${library.jniFolder}"
         return library.jniFolder
     }
 
     Collection<File> getLocalJars() {
+        Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s local jars: ${library.localJars}"
         return library.localJars
     }
 
@@ -73,6 +78,7 @@ class AarDependenceInfo extends DependenceInfo {
             rSymbol = FileUtils.join(intermediatesDir, TaskManager.DIR_BUNDLES, library.projectVariant, SdkConstants.FN_RESOURCE_TEXT)
         }
         if (rSymbol.exists()) {
+            Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s symbol file: ${rSymbol}"
             rSymbol.eachLine { line ->
                 if (!line.empty) {
                     def tokenizer = new StringTokenizer(line)
@@ -101,6 +107,7 @@ class AarDependenceInfo extends DependenceInfo {
             // module library
             manifest = FileUtils.join(intermediatesDir, 'manifests', 'full', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
         }
+        Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s manifest file: ${manifest}"
         def xmlManifest = new XmlParser().parse(manifest)
         return xmlManifest.@package
     }

@@ -73,6 +73,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         dependencies.libraries.each {
             def mavenCoordinates = it.resolvedCoordinates
             if (hostDependencies.contains("${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}")) {
+                Log.i 'PrepareDependenciesHooker', "Need strip aar: ${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}:${mavenCoordinates.version}"
                 stripDependencies.add(
                         new AarDependenceInfo(
                                 mavenCoordinates.groupId,
@@ -81,6 +82,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
                                 it))
 
             } else {
+                Log.i 'PrepareDependenciesHooker', "Need retain aar: ${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}:${mavenCoordinates.version}"
                 retainedAarLibs.add(
                         new AarDependenceInfo(
                                 mavenCoordinates.groupId,
@@ -93,6 +95,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         dependencies.javaLibraries.each {
             def mavenCoordinates = it.resolvedCoordinates
             if (hostDependencies.contains("${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}")) {
+                Log.i 'PrepareDependenciesHooker', "Need strip jar: ${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}:${mavenCoordinates.version}"
                 stripDependencies.add(
                         new JarDependenceInfo(
                                 mavenCoordinates.groupId,
@@ -100,6 +103,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
                                 mavenCoordinates.version,
                                 it))
             } else {
+                Log.i 'PrepareDependenciesHooker', "Need retain jar: ${mavenCoordinates.groupId}:${mavenCoordinates.artifactId}:${mavenCoordinates.version}"
                 retainedJarLib.add(
                         new JarDependenceInfo(
                                 mavenCoordinates.groupId,

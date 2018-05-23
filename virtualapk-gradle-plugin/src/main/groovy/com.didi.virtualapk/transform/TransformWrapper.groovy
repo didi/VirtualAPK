@@ -1,6 +1,7 @@
 package com.didi.virtualapk.transform
 
 import com.android.build.api.transform.*
+import com.didi.virtualapk.utils.Log
 
 public class TransformWrapper extends Transform {
 
@@ -75,20 +76,20 @@ public class TransformWrapper extends Transform {
         Collection<TransformInput> inputs = invocation.getInputs()
         for (TransformInput input : inputs) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                println "input dir: ${directoryInput.getFile()}"
+                Log.i "${name}", "input dir: ${directoryInput.getFile()}"
             }
             for (JarInput jarInput : input.getJarInputs()) {
-                println "input jar: ${jarInput.getFile()}"
+                Log.i "${name}", "input jar: ${jarInput.getFile()}"
             }
         }
 
         Collection<TransformInput> referencedInputs = invocation.getReferencedInputs();
         for (TransformInput transformInput : referencedInputs) {
             for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
-                println "referenced input dir: ${directoryInput.getFile()}"
+                Log.i "${name}", "referenced input dir: ${directoryInput.getFile()}"
             }
             for (JarInput jarInput : transformInput.getJarInputs()) {
-                println "referenced input jar: ${jarInput.getFile()}"
+                Log.i "${name}", "referenced input jar: ${jarInput.getFile()}"
             }
         }
 

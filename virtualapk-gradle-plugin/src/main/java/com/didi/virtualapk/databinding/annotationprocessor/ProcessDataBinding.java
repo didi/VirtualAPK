@@ -16,6 +16,8 @@
 
 package com.didi.virtualapk.databinding.annotationprocessor;
 
+import com.didi.virtualapk.utils.Log;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -100,7 +102,7 @@ public class ProcessDataBinding extends AbstractProcessor {
                 writer.newLine();
             }
             
-            System.out.print("Generated java source file: " + DATA_BINDER_MAPPER_PACKAGE + "." + className);
+            Log.i("ProcessDataBinding", "Generated java source file: " + DATA_BINDER_MAPPER_PACKAGE + "." + className);
     
         } catch (Exception e) {
             e.printStackTrace();

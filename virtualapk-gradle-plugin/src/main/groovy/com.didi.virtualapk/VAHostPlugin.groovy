@@ -8,6 +8,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.didi.virtualapk.utils.FileUtil
+import com.didi.virtualapk.utils.Log
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ComponentIdentifier
@@ -23,8 +24,9 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
  */
 public class VAHostPlugin implements Plugin<Project> {
 
+    public static final String TAG = 'VAHostPlugin'
     Project project
-    File vaHostDir;
+    File vaHostDir
 
     @Override
     public void apply(Project project) {
@@ -33,7 +35,7 @@ public class VAHostPlugin implements Plugin<Project> {
 
         //The target project must be a android application module
         if (!project.plugins.hasPlugin('com.android.application')) {
-            System.err.println("application required!");
+            Log.e(TAG, "application required!")
             return;
         }
 
@@ -83,9 +85,9 @@ public class VAHostPlugin implements Plugin<Project> {
 
             FileUtil.saveFile(vaHostDir, "versions", {
                 List<String> deps = new ArrayList<String>()
-                println "Used compileClasspath: ${applicationVariant.name}"
+                Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
                 Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
-                        applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null);
+                        applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null)
 
                 compileArtifacts.each { ArtifactDependencyGraph.HashableResolvedArtifactResult artifact ->
                     ComponentIdentifier id = artifact.id.componentIdentifier

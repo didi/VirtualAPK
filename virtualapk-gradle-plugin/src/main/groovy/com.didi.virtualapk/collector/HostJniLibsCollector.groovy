@@ -120,7 +120,7 @@ class HostJniLibsCollector {
             @NonNull File file,
             @NonNull String path,
             @NonNull AarDependenceInfo aarDependenceInfo,
-            @NonNull ListMultimap<String, QualifiedContent> content) {
+            @NonNull ListMultimap<String, DependenceInfo> content) {
         File[] children = file.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File f, String name) {

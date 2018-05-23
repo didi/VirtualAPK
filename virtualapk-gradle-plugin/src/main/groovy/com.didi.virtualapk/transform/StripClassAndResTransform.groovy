@@ -66,10 +66,10 @@ class StripClassAndResTransform extends Transform {
 
         transformInvocation.inputs.each {
             it.directoryInputs.each { directoryInput ->
-//                Log.i 'StripClassAndResTransform', "input dir: ${directoryInput.file.absoluteFile}"
+                Log.i 'StripClassAndResTransform', "input dir: ${directoryInput.file.absoluteFile}"
                 def destDir = transformInvocation.outputProvider.getContentLocation(
                         directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
-//                Log.i 'StripClassAndResTransform', "output dir: ${destDir.absoluteFile}"
+                Log.i 'StripClassAndResTransform', "output dir: ${destDir.absoluteFile}"
                 directoryInput.file.traverse(type: FileType.FILES) {
                     def entryName = it.path.substring(directoryInput.file.path.length() + 1)
 //                    Log.i 'StripClassAndResTransform', "found file: ${it.absoluteFile}"
@@ -85,11 +85,12 @@ class StripClassAndResTransform extends Transform {
             }
 
             it.jarInputs.each { jarInput ->
-//                Log.i 'StripClassAndResTransform', "${name} jar: ${jarInput.file.absoluteFile}"
+                Log.i 'StripClassAndResTransform', "input jar: ${jarInput.file.absoluteFile}"
                 Set<String> jarEntries = HostClassAndResCollector.unzipJar(jarInput.file)
                 if (!stripEntries.containsAll(jarEntries)){
                     def dest = transformInvocation.outputProvider.getContentLocation(jarInput.name,
                             jarInput.contentTypes, jarInput.scopes, Format.JAR)
+                    Log.i 'StripClassAndResTransform', "output jar: ${dest.absoluteFile}"
                     FileUtils.copyFile(jarInput.file, dest)
 //                    Log.i 'StripClassAndResTransform', "Copied to jar: ${dest.absoluteFile}"
                 } else {

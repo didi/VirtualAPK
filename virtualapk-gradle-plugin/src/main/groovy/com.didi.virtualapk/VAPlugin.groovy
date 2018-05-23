@@ -53,7 +53,7 @@ class VAPlugin extends BasePlugin {
     protected void beforeCreateAndroidTasks(boolean isBuildingPlugin) {
         this.isBuildingPlugin = isBuildingPlugin
         if (!isBuildingPlugin) {
-            Log.i 'Plugin', "Skipped all VirtualApk's configurations!"
+            Log.i 'VAPlugin', "Skipped all VirtualApk's configurations!"
             return
         }
         stripClassAndResTransform = new StripClassAndResTransform(project)
