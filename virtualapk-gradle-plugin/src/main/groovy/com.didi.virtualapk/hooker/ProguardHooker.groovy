@@ -63,7 +63,7 @@ class ProguardHooker extends GradleTaskHooker<TransformTask> {
             proguardTransform.applyTestedMapping(applyMappingFile)
         }
 
-        virtualApk.stripDependencies.each {
+        vaContext.stripDependencies.each {
             proguardTransform.libraryJar(it.jarFile)
             if (it instanceof AarDependenceInfo) {
                 it.localJars.each {

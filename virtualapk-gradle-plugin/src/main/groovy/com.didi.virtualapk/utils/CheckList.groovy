@@ -2,9 +2,13 @@ package com.didi.virtualapk.utils
 
 class CheckList {
     Map<String, Boolean> mMap = new LinkedHashMap<>()
+    String variantName
 
-    void addCheckPoint(String variantName, String name) {
-        String key = "${variantName}:${name}"
+    CheckList(String variantName) {
+        this.variantName = variantName
+    }
+
+    void addCheckPoint(String key) {
         if (mMap.containsKey(key)) {
             throw new RuntimeException("[${key}] has already exists.")
         }
@@ -12,18 +16,14 @@ class CheckList {
 //        Log.i('test', "addCheckPoint: ${key}")
     }
 
-    void mark(String variantName, String name) {
-        String key = "${variantName}:${name}"
+    void mark(String key) {
         mMap.put(key, true)
 //        Log.i('test', "mark: ${key}")
     }
 
-    void check(String variantName) {
+    void check() {
         boolean check = true
-        Map matched = mMap.findAll {
-//            Log.i 'CheckList', "all: ${it.key}: ${it.value}"
-            it.key.startsWith("${variantName}:")
-        }
+        Map matched = mMap
 
         matched.each {
             check &= it.value

@@ -5,6 +5,7 @@ import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.didi.virtualapk.VAExtention
+import com.didi.virtualapk.VAExtention.VAContext
 import org.gradle.api.Project
 import org.gradle.api.Task
 
@@ -32,7 +33,7 @@ public abstract class GradleTaskHooker<T extends Task> {
         this.apkVariant = apkVariant
         this.virtualApk = project.virtualApk
 
-        virtualApk.checkList.addCheckPoint(apkVariant.name, taskName)
+        vaContext.checkList.addCheckPoint(taskName)
     }
 
     public Project getProject() {
@@ -55,8 +56,12 @@ public abstract class GradleTaskHooker<T extends Task> {
         return this.virtualApk
     }
 
+    public VAContext getVaContext() {
+        return this.virtualApk.getVaContext(apkVariant.name)
+    }
+
     public void mark() {
-        virtualApk.checkList.mark(apkVariant.name, taskName)
+        vaContext.checkList.mark(taskName)
     }
 
     public void setTaskHookerManager(TaskHookerManager taskHookerManager) {

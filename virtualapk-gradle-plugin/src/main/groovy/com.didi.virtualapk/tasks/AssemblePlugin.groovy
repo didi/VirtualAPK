@@ -2,6 +2,7 @@ package com.didi.virtualapk.tasks
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
+import com.didi.virtualapk.VAExtention
 import com.didi.virtualapk.utils.TaskUtil
 import com.sun.istack.internal.NotNull
 import org.gradle.api.Action
@@ -40,7 +41,8 @@ public class AssemblePlugin extends DefaultTask {
      */
     @TaskAction
     public void outputPluginApk() {
-        project.virtualApk.checkList.check(variantName)
+        VAExtention virtualApk = project.virtualApk
+        virtualApk.getVaContext(variantName).checkList.check()
 
         getProject().copy {
             from originApkFile

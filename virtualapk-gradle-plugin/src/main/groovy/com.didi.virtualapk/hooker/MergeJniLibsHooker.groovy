@@ -36,7 +36,7 @@ class MergeJniLibsHooker extends GradleTaskHooker<TransformTask> {
     @Override
     void beforeTaskExecute(TransformTask task) {
 
-        def excludeJniFiles = jniLibsCollector.collect(virtualApk.stripDependencies)
+        def excludeJniFiles = jniLibsCollector.collect(vaContext.stripDependencies)
 
         excludeJniFiles.each {
             androidConfig.packagingOptions.exclude("/${it}")

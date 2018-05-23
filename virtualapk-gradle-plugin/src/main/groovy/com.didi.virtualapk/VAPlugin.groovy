@@ -80,6 +80,8 @@ class VAPlugin extends BasePlugin {
             hostDir.mkdirs()
         }
 
+        virtualApk.hostDependenceFile = new File(hostDir, "versions.txt")
+
         project.afterEvaluate {
             if (!isBuildingPlugin) {
                 return
@@ -98,10 +100,10 @@ class VAPlugin extends BasePlugin {
                 checkConfig()
 
                 virtualApk.with {
-                    packageName = variant.applicationId
-                    packagePath = packageName.replace('.'.charAt(0), File.separatorChar)
-                    hostSymbolFile = new File(hostDir, "Host_R.txt")
-                    hostDependenceFile = new File(hostDir, "versions.txt")
+                    VAExtention.VAContext vaContext = getVaContext(variant.name)
+                    vaContext.packageName = variant.applicationId
+                    vaContext.packagePath = vaContext.packageName.replace('.'.charAt(0), File.separatorChar)
+                    vaContext.hostSymbolFile = new File(hostDir, "Host_R.txt")
                 }
             }
         }

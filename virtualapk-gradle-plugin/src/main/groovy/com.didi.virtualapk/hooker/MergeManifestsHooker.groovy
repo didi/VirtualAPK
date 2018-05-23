@@ -39,7 +39,7 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
     @Override
     void beforeTaskExecute(MergeManifests task) {
 
-        def stripAarNames = virtualApk.stripDependencies.
+        def stripAarNames = vaContext.stripDependencies.
                 findAll {
                     it.dependenceType == DependenceInfo.DependenceType.AAR
                 }.

@@ -44,7 +44,7 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
     }
 
     void handleFile(File file) {
-        if (file.directory && file.path.endsWith(virtualApk.packagePath)) {
+        if (file.directory && file.path.endsWith(vaContext.packagePath)) {
 
             if (recompileSplitR(file)) {
                 Log.i 'DxTaskHooker', "Recompiled R.java in dir: ${file.absoluteFile}"
@@ -59,11 +59,11 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
             }
 
             // VirtualApk Package Dir
-            File pkgDir = new File(unzipJarDir, virtualApk.packagePath)
+            File pkgDir = new File(unzipJarDir, vaContext.packagePath)
             if (pkgDir.exists()) {
                 if (recompileSplitR(pkgDir)) {
                     Log.i 'DxTaskHooker', "Recompiled R.java in jar: ${file.absoluteFile}"
-                    File backupDir = new File(virtualApk.getBuildDir(scope), 'origin/classes')
+                    File backupDir = new File(vaContext.getBuildDir(scope), 'origin/classes')
                     backupDir.deleteDir()
                     project.copy {
                         from file
@@ -98,10 +98,10 @@ class DxTaskHooker extends GradleTaskHooker<TransformTask> {
                 it.delete()
             }
 
-            String baseDir = pkgDir.path - "${File.separator}${virtualApk.packagePath}"
+            String baseDir = pkgDir.path - "${File.separator}${vaContext.packagePath}"
 
             project.ant.javac(
-                srcdir: virtualApk.splitRJavaFile.parentFile,
+                srcdir: vaContext.splitRJavaFile.parentFile,
                 source: apkVariant.javaCompiler.sourceCompatibility,
                 target: apkVariant.javaCompiler.targetCompatibility,
                 destdir: new File(baseDir))

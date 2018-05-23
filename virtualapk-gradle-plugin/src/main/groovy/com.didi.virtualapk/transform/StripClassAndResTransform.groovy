@@ -27,7 +27,7 @@ class StripClassAndResTransform extends Transform {
 
     void onProjectAfterEvaluate() {
         project.android.applicationVariants.each { ApplicationVariant variant ->
-            virtualApk.checkList.addCheckPoint(variant.name, name)
+            virtualApk.getVaContext(variant.name).checkList.addCheckPoint(name)
         }
     }
 
@@ -57,7 +57,8 @@ class StripClassAndResTransform extends Transform {
     @Override
     void transform(final TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
 
-        def stripEntries = classAndResCollector.collect(virtualApk.stripDependencies)
+        VAExtention.VAContext vaContext = virtualApk.getVaContext(transformInvocation.context.variantName)
+        def stripEntries = classAndResCollector.collect(vaContext.stripDependencies)
 
         if (!isIncremental()) {
             transformInvocation.outputProvider.deleteAll()
@@ -97,6 +98,6 @@ class StripClassAndResTransform extends Transform {
             }
         }
 
-        virtualApk.checkList.mark(transformInvocation.context.variantName, name)
+        vaContext.checkList.mark(name)
     }
 }

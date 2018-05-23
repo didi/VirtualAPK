@@ -13,44 +13,93 @@ import com.didi.virtualapk.utils.CheckList
 public class VAExtention {
 
     /** Custom defined resource package Id **/
-    int packageId
+    private int packageId
     /** Local host application directory or Jenkins build number, fetch config files from here **/
-    String targetHost
+    private String targetHost
     /** Apply Host Proguard Mapping or not**/
-    boolean applyHostMapping = true
+    private boolean applyHostMapping = true
     /** Exclude dependent aar or jar **/
-    Collection<String> excludes = new HashSet<>()
-
-    /**  host Symbol file - Host_R.txt */
-    File hostSymbolFile
+    private Collection<String> excludes = new HashSet<>()
     /**  host dependence file - version.txt*/
-    File hostDependenceFile
+    public File hostDependenceFile
 
 
-    Collection<DependenceInfo> stripDependencies = []
-    Collection<AarDependenceInfo> retainedAarLibs = []
+    private final Map<String, VAContext> vaContextMap = [] as HashMap
 
-    /** Variant application id */
-    String packageName
-
-    /** Package path for java classes */
-    String packagePath
-
-    /** File of split R.java */
-    File splitRJavaFile
-
-    final CheckList checkList = new CheckList()
-
-    public File getBuildDir(VariantScope scope) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                "virtualapk/" + scope.getVariantConfiguration().getDirName())
+    public VAContext getVaContext(String variantName) {
+        synchronized (vaContextMap) {
+            VAContext vaContext = vaContextMap.get(variantName)
+            if (vaContext == null) {
+                vaContext = new VAContext(variantName)
+                vaContextMap.put(variantName, vaContext)
+            }
+            return vaContext
+        }
     }
 
-    public void exclude(final String...filters) {
+    public int getPackageId() {
+        return packageId
+    }
+
+    public void setPackageId(int packageId) {
+        this.packageId = packageId
+    }
+
+    public String getTargetHost() {
+        return targetHost
+    }
+
+    public void setTargetHost(String targetHost) {
+        this.targetHost = targetHost
+    }
+
+    public boolean getApplyHostMapping() {
+        return applyHostMapping
+    }
+
+    public void setApplyHostMapping(boolean applyHostMapping) {
+        this.applyHostMapping = applyHostMapping
+    }
+
+    Collection<String> getExcludes() {
+        return excludes
+    }
+
+    public void setExcludes(final String...filters) {
         if (null != filters) {
             for (final String filter :filters) {
-                this.excludes.add(filter);
+                this.excludes.add(filter)
             }
         }
+    }
+
+    public static class VAContext {
+
+        /**  host Symbol file - Host_R.txt */
+        public File hostSymbolFile
+
+        public Collection<DependenceInfo> stripDependencies = []
+        public Collection<AarDependenceInfo> retainedAarLibs = []
+
+        /** Variant application id */
+        public String packageName
+
+        /** Package path for java classes */
+        public String packagePath
+
+        /** File of split R.java */
+        public File splitRJavaFile
+
+        public final CheckList checkList
+
+        VAContext(String variantName) {
+            checkList = new CheckList(variantName)
+        }
+
+        public File getBuildDir(VariantScope scope) {
+            return new File(scope.getGlobalScope().getIntermediatesDir(),
+                    "virtualapk/" + scope.getVariantConfiguration().getDirName())
+        }
+
     }
 }

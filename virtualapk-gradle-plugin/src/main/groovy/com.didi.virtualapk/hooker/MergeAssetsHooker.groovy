@@ -34,7 +34,7 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
     @Override
     void beforeTaskExecute(MergeSourceSetFolders task) {
 
-        Set<String> strippedAssetPaths = virtualApk.stripDependencies.collect {
+        Set<String> strippedAssetPaths = vaContext.stripDependencies.collect {
             if (it instanceof AarDependenceInfo) {
                 return it.assetsFolder.path
             }

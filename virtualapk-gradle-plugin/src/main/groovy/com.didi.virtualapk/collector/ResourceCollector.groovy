@@ -19,6 +19,7 @@ class ResourceCollector {
 
     private Project project
     private VAExtention virtualApk
+    private VAExtention.VAContext vaContext
 
     /**
      * Gradle task of process resource in Android build system
@@ -56,11 +57,12 @@ class ResourceCollector {
 
         this.project = project
         virtualApk = project.virtualApk
+        vaContext = virtualApk.getVaContext(par.variantName)
 
         processResTask = par
 
         allRSymbolFile = par.textSymbolOutputFile
-        hostRSymbolFile = virtualApk.hostSymbolFile
+        hostRSymbolFile = vaContext.hostSymbolFile
     }
 
     /**
@@ -83,7 +85,7 @@ class ResourceCollector {
         reassignPluginResourceId()
 
         //5、Collect all the resources in the retained AARs, to regenerate the R java file that uses the new resource ID
-        virtualApk.retainedAarLibs.each {
+        vaContext.retainedAarLibs.each {
             gatherReservedAarResources(it)
         }
     }
@@ -263,7 +265,7 @@ class ResourceCollector {
         }
 
         vendorTypeFile.withPrintWriter { pw ->
-            virtualApk.retainedAarLibs.each { aarLib ->
+            vaContext.retainedAarLibs.each { aarLib ->
                 pw.println "${aarLib.name}"
 
                 aarLib.aarResources.values().each {
