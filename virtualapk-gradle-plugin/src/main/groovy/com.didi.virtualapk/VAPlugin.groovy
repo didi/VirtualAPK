@@ -185,7 +185,7 @@ class VAPlugin extends BasePlugin {
 
         File hostLocalDir = new File(targetHost)
         if (!hostLocalDir.exists()) {
-            def err = "The directory of host application doesn't exist! Dir: ${hostLocalDir.absolutePath}"
+            def err = "The directory of host application doesn't exist! Dir: ${hostLocalDir.canonicalPath}"
             throw new InvalidUserDataException(err)
         }
 
@@ -196,7 +196,7 @@ class VAPlugin extends BasePlugin {
                 dst << hostR
             }
         } else {
-            def err = new StringBuilder("Can't find ${hostR.absolutePath}, please check up your host application\n")
+            def err = new StringBuilder("Can't find ${hostR.canonicalPath}, please check up your host application\n")
             err.append("  need apply com.didi.virtualapk.host in build.gradle of host application\n ")
             throw new InvalidUserDataException(err.toString())
         }
@@ -208,7 +208,7 @@ class VAPlugin extends BasePlugin {
                 dst << hostVersions
             }
         } else {
-            def err = new StringBuilder("Can't find ${hostVersions.absolutePath}, please check up your host application\n")
+            def err = new StringBuilder("Can't find ${hostVersions.canonicalPath}, please check up your host application\n")
             err.append("  need apply com.didi.virtualapk.host in build.gradle of host application \n")
             throw new InvalidUserDataException(err.toString())
         }
