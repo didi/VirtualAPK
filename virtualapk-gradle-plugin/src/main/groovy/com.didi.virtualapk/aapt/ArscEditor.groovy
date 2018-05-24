@@ -57,6 +57,11 @@ public class ArscEditor extends AssetEditor {
         def retainedEntries = []
         def libPackageIds = []
 
+        if (t.typeList.specs.size() == 0) {
+            println "\t -- There was no res."
+            return
+        }
+
         // Ensure there is an `attr' typeSpec
         if (retainedTypes[0].id != 1) { // attr type id is always as `1'
             def attrSpec = t.typeList.specs[0]
