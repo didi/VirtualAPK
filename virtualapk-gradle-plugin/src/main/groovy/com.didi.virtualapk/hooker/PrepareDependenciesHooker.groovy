@@ -115,6 +115,9 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         FileUtil.saveFile(hostDir, "${taskName}-stripDependencies", stripDependencies)
         FileUtil.saveFile(hostDir, "${taskName}-retainedAarLibs", retainedAarLibs)
         FileUtil.saveFile(hostDir, "${taskName}-retainedJarLib", retainedJarLib)
+
+        checkDependencies()
+
         Log.i 'PrepareDependenciesHooker', "Analyzed all dependencis. Get more infomation in dir: ${hostDir.absoluteFile}"
 
         vaContext.stripDependencies = stripDependencies
@@ -122,4 +125,36 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         mark()
     }
 
+    void checkDependencies() {
+        ArrayList<DependenceInfo> allRetainedDependencies = new ArrayList<>()
+        allRetainedDependencies.addAll(retainedAarLibs)
+        allRetainedDependencies.addAll(retainedJarLib)
+
+        ArrayList<String> checked = new ArrayList<>()
+
+        allRetainedDependencies.each {
+            String group = it.group
+            String artifact = it.artifact
+            String version = it.version
+
+            // com.didi.virtualapk:core
+            if (group == 'com.didi.virtualapk' && artifact == 'core') {
+                checked.add("${group}:${artifact}:${version}")
+            }
+
+            // com.android.support:all
+            if (group == 'com.android.support' || group.startsWith('com.android.support.')) {
+                checked.add("${group}:${artifact}:${version}")
+            }
+
+            // com.android.databinding:all
+            if (group == 'com.android.databinding' || group.startsWith('com.android.databinding.')) {
+                checked.add("${group}:${artifact}:${version}")
+            }
+        }
+
+        if (!checked.empty) {
+            throw new Exception("The dependencies [${String.join(', ', checked)}] that will be used in the current plugin must be included in the host app first. Please add it in the host app as well.")
+        }
+    }
 }
