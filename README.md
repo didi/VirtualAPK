@@ -28,7 +28,7 @@ Add a dependency in `build.gradle` in root of host project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.8.3'
+    classpath 'com.didi.virtualapk:gradle:0.9.8.4-dev'
 }
 ```
 
@@ -41,7 +41,7 @@ apply plugin: 'com.didi.virtualapk.host'
 Compile VirtualAPK in application module of `build.gradle`.
 
 ``` java
-compile 'com.didi.virtualapk:core:0.9.5'
+compile 'com.didi.virtualapk:core:0.9.6-dev'
 ```
 
 Initialize `PluginManager` in `YourApplication::attachBaseContext()`.
@@ -85,7 +85,7 @@ Add a dependency in `build.gradle` in root of plugin project as following.
 
 ``` java
 dependencies {
-    classpath 'com.didi.virtualapk:gradle:0.9.8.3'
+    classpath 'com.didi.virtualapk:gradle:0.9.8.4-dev'
 }
 ```
 
