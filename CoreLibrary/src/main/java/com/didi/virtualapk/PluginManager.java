@@ -253,11 +253,13 @@ public class PluginManager {
     }
 
     public LoadedPlugin getLoadedPlugin(Intent intent) {
-        ComponentName component = PluginUtil.getComponent(intent);
-        return getLoadedPlugin(component.getPackageName());
+        return getLoadedPlugin(PluginUtil.getComponent(intent));
     }
 
     public LoadedPlugin getLoadedPlugin(ComponentName component) {
+        if (component == null) {
+            return null;
+        }
         return this.getLoadedPlugin(component.getPackageName());
     }
 

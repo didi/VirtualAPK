@@ -51,16 +51,22 @@ import java.util.zip.ZipFile;
  */
 public class PluginUtil {
 
-    public static String getTargetActivity(Intent intent) {
-        return intent.getStringExtra(Constants.KEY_TARGET_ACTIVITY);
-    }
-
     public static ComponentName getComponent(Intent intent) {
-        return new ComponentName(intent.getStringExtra(Constants.KEY_TARGET_PACKAGE),
+        if (intent == null) {
+            return null;
+        }
+        if (isIntentFromPlugin(intent)) {
+            return new ComponentName(intent.getStringExtra(Constants.KEY_TARGET_PACKAGE),
                 intent.getStringExtra(Constants.KEY_TARGET_ACTIVITY));
+        }
+        
+        return intent.getComponent();
     }
 
     public static boolean isIntentFromPlugin(Intent intent) {
+        if (intent == null) {
+            return false;
+        }
         return intent.getBooleanExtra(Constants.KEY_IS_PLUGIN, false);
     }
 
@@ -166,6 +172,9 @@ public class PluginUtil {
     }
 
     public static IBinder getBinder(Bundle bundle, String key) {
+        if (bundle == null) {
+            return null;
+        }
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             return bundle.getBinder(key);
         } else {

@@ -88,7 +88,7 @@ public final class LoadedPlugin {
 
         if (Constants.COMBINE_CLASSLOADER) {
             try {
-                DexUtil.insertDex(loader);
+                DexUtil.insertDex(loader, parent);
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -18,6 +18,7 @@ package com.didi.virtualapk.internal;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.Application;
 import android.app.Fragment;
 import android.app.Instrumentation;
 import android.content.ComponentName;
@@ -91,29 +92,43 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
     public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         try {
             cl.loadClass(className);
+            Log.i(TAG, String.format("newActivity[%s]", className));
+            
         } catch (ClassNotFoundException e) {
             ComponentName component = PluginUtil.getComponent(intent);
-            LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(component);
-            String targetClassName = component.getClassName();
-
-            Log.i(TAG, String.format("newActivity[%s : %s/%s]", className, component.getPackageName(), targetClassName));
-
-            if (plugin != null) {
-                Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
-                activity.setIntent(intent);
-
-                try {
-                    // for 4.1+
-                    Reflector.with(activity).field("mResources").set(plugin.getResources());
-                } catch (Exception ignored) {
-                    // ignored.
-                }
-
-                return activity;
+            
+            if (component == null) {
+                return mBase.newActivity(cl, className, intent);
             }
+    
+            String targetClassName = component.getClassName();
+            Log.i(TAG, String.format("newActivity[%s : %s/%s]", className, component.getPackageName(), targetClassName));
+    
+            LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(component);
+    
+            if (plugin == null) {
+                return mBase.newActivity(cl, className, intent);
+            }
+            
+            Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
+            activity.setIntent(intent);
+    
+            try {
+                // for 4.1+
+                Reflector.with(activity).field("mResources").set(plugin.getResources());
+            } catch (Exception ignored) {
+                // ignored.
+            }
+    
+            return activity;
         }
 
         return mBase.newActivity(cl, className, intent);
+    }
+    
+    @Override
+    public Application newApplication(ClassLoader cl, String className, Context context) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        return mBase.newApplication(cl, className, context);
     }
 
     @Override
@@ -159,7 +174,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             try {
                 Reflector reflector = Reflector.with(r);
                 Intent intent = reflector.field("intent").get();
-                intent.setExtrasClassLoader(VAInstrumentation.class.getClassLoader());
+                intent.setExtrasClassLoader(mPluginManager.getHostContext().getClassLoader());
                 ActivityInfo activityInfo = reflector.field("activityInfo").get();
 
                 if (PluginUtil.isIntentFromPlugin(intent)) {

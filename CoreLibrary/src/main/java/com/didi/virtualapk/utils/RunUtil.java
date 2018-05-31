@@ -28,7 +28,6 @@ import android.util.Pair;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Created by renyugang on 16/11/10.
@@ -77,17 +76,22 @@ public class RunUtil {
         return AsyncTask.THREAD_POOL_EXECUTOR;
     }
 
-    public static String getProcessNameByPid(Context context, int pid) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningAppProcessInfo> appProcessList = manager.getRunningAppProcesses();
-        if (appProcessList != null) {
-            for (ActivityManager.RunningAppProcessInfo appProcessInfo : appProcessList) {
-                if (pid == appProcessInfo.pid) {
-                    return appProcessInfo.processName;
+    private static String getProcessNameByPid(Context context, int pid) {
+        try {
+            ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> appProcessList = manager.getRunningAppProcesses();
+            if (appProcessList != null) {
+                for (ActivityManager.RunningAppProcessInfo appProcessInfo : appProcessList) {
+                    if (pid == appProcessInfo.pid) {
+                        return appProcessInfo.processName;
+                    }
                 }
             }
+    
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-
+        
         return null;
     }
 
