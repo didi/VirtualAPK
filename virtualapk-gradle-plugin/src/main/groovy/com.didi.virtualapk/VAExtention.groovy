@@ -91,8 +91,27 @@ public class VAExtention {
         if (hostDependencies == null) {
             hostDependencies = [] as LinkedHashMap
             hostDependenceFile.splitEachLine('\\s+', { columns ->
-                final def module = columns[0].split(':')
-                hostDependencies.put("${module[0]}:${module[1]}", [group: module[0], name: module[1], version: module[2]])
+                String id = columns[0]
+                int index1 = id.indexOf(':')
+                int index2 = id.lastIndexOf(':')
+                def module = [group: 'unspecified', name: 'unspecified', version: 'unspecified']
+
+                if (index1 < 0 || index2 < 0 || index1 == index2) {
+                    Log.e('Dependencies', "Parsed error: [${id}] -> ${module}")
+                    return
+                }
+
+                if (index1 > 0) {
+                    module.group = id.substring(0, index1)
+                }
+                if (index2 - index1 > 0) {
+                    module.name = id.substring(index1 + 1, index2)
+                }
+                if (id.length() - index2 > 1) {
+                    module.version = id.substring(index2 + 1)
+                }
+
+                hostDependencies.put("${module.group}:${module.name}", module)
             })
         }
         return hostDependencies
