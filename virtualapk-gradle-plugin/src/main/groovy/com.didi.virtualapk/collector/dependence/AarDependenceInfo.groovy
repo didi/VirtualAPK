@@ -23,6 +23,8 @@ class AarDependenceInfo extends DependenceInfo {
      */
     AndroidLibrary library
 
+    File intermediatesFile
+
     /**
      * All resources(e.g. drawable, layout...) this library can access
      * include resources of self-project and dependence(direct&transitive) project
@@ -72,11 +74,7 @@ class AarDependenceInfo extends DependenceInfo {
 
         def resKeys = [] as Set<String>
 
-        def rSymbol = library.symbolFile
-        if (!rSymbol.exists()) {
-            // module library
-            rSymbol = FileUtils.join(intermediatesDir, TaskManager.DIR_BUNDLES, library.projectVariant, SdkConstants.FN_RESOURCE_TEXT)
-        }
+        def rSymbol = getFile(library.symbolFile, TaskManager.DIR_BUNDLES, library.projectVariant, SdkConstants.FN_RESOURCE_TEXT)
         if (rSymbol.exists()) {
             Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s symbol file: ${rSymbol}"
             rSymbol.eachLine { line ->
@@ -100,22 +98,38 @@ class AarDependenceInfo extends DependenceInfo {
      * @return package name of this library
      */
     public String getPackage() {
-        File manifest
-        if (library.manifest.exists()) {
-            manifest = library.manifest
-        } else {
-            // module library
-            manifest = FileUtils.join(intermediatesDir, 'manifests', 'full', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
-        }
+        File manifest = getFile(library.manifest, 'manifests', 'full', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
         Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s manifest file: ${manifest}"
         def xmlManifest = new XmlParser().parse(manifest)
         return xmlManifest.@package
     }
 
     File getIntermediatesDir() {
-        String path = library.folder.path
-        return new File(path.substring(0, path.indexOf("${File.separator}intermediates${File.separator}")), 'intermediates')
+        if (intermediatesFile == null) {
+            String path = library.folder.path
+            try {
+                intermediatesFile = new File(path.substring(0, path.indexOf("${File.separator}intermediates${File.separator}")), 'intermediates')
+
+            } catch (Exception e) {
+                Log.e('AarDependenceInfo', "Can not find [${library.resolvedCoordinates}]'s intermediates dir from the path: ${path}")
+                intermediatesFile = library.folder
+            }
+        }
+        return intermediatesFile
     }
+
+    File getFile(File defaultFile, String... paths) {
+        if (library.projectVariant == null) {
+            return defaultFile
+        }
+
+        if (defaultFile.exists()) {
+            return defaultFile
+        }
+
+        // module library
+        return FileUtils.join(intermediatesDir, paths)
+     }
 
     @Override
     String toString() {
