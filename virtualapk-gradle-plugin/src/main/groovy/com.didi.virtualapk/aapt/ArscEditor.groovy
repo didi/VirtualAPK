@@ -63,7 +63,7 @@ public class ArscEditor extends AssetEditor {
         }
 
         // Ensure there is an `attr' typeSpec
-        if (retainedTypes[0].id != 1) { // attr type id is always as `1'
+        if (retainedTypes[0].id == Aapt.ID_NO_ATTR) { // attr type id is always at first
             def attrSpec = t.typeList.specs[0]
             attrSpec.entryCount = 0
             attrSpec.configs = []
@@ -71,6 +71,7 @@ public class ArscEditor extends AssetEditor {
             attrSpec.header.size = attrSpec.header.headerSize // id(1) res0(1) res1(2) entryCount(4)
             retainedTypeIds.add(attrSpec.id - 1)
             retainedTypeSpecs.add(attrSpec)
+            println "\t -- There was no attr."
         }
 
         def index = 0

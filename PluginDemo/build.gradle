@@ -6,7 +6,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.0'
-        classpath 'com.didi.virtualapk:gradle:0.9.8.4-dev'
+        classpath 'com.didi.virtualapk:gradle:0.9.8.4.4-dev'
     }
 }
 
