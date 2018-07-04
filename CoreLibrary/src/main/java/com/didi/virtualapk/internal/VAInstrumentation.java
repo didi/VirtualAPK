@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Fragment;
 import android.app.Instrumentation;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -34,6 +35,7 @@ import android.os.PersistableBundle;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.delegate.StubActivity;
 import com.didi.virtualapk.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
 
@@ -113,7 +115,16 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(component);
     
             if (plugin == null) {
-                return newActivity(mBase.newActivity(cl, className, intent));
+                // Not found then goto stub activity.
+                Context context = this.mPluginManager.getHostContext();
+                Boolean debugMode = Reflector.QuietReflector.on(context.getPackageName() + ".BuildConfig").field("DEBUG").get();
+                
+                if (debugMode != null && debugMode) {
+                    throw new ActivityNotFoundException("error intent: " + intent.toURI());
+                }
+                
+                Log.i(TAG, "Not found. starting the stub activity: " + StubActivity.class);
+                return newActivity(mBase.newActivity(cl, StubActivity.class.getName(), intent));
             }
             
             Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
