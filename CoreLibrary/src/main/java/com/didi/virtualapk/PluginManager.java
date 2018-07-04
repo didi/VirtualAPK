@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -95,13 +96,13 @@ public class PluginManager {
     }
 
     private void prepare() {
-        this.hookInstrumentationAndHandler();
-        this.hookSystemServices();
+        mComponentsHandler = createComponentsHandler();
+        hookInstrumentationAndHandler();
+        hookSystemServices();
         hookDataBindingUtil();
     }
 
     public void init() {
-        mComponentsHandler = new ComponentsHandler(this);
         RunUtil.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
@@ -110,10 +111,26 @@ public class PluginManager {
         });
     }
 
-    private void doInWorkThread() {
+    protected void doInWorkThread() {
     }
     
-    private void hookDataBindingUtil() {
+    protected ComponentsHandler createComponentsHandler() {
+        return new ComponentsHandler(this);
+    }
+    
+    protected VAInstrumentation createInstrumentation(Instrumentation origin) throws Exception {
+        return new VAInstrumentation(this, origin);
+    }
+    
+    protected ActivityManagerProxy createActivityManagerProxy(IActivityManager origin) throws Exception {
+        return new ActivityManagerProxy(this, origin);
+    }
+    
+    protected LoadedPlugin createLoadedPlugin(File apk) throws Exception {
+        return new LoadedPlugin(this, this.mContext, apk);
+    }
+    
+    protected void hookDataBindingUtil() {
         Reflector.QuietReflector reflector = Reflector.QuietReflector.on("android.databinding.DataBindingUtil").field("sMapper");
         Object old = reflector.get();
         if (old != null) {
@@ -139,7 +156,7 @@ public class PluginManager {
     /**
      * hookSystemServices, but need to compatible with Android O in future.
      */
-    private void hookSystemServices() {
+    protected void hookSystemServices() {
         try {
             Singleton<IActivityManager> defaultSingleton;
     
@@ -148,7 +165,9 @@ public class PluginManager {
             } else {
                 defaultSingleton = Reflector.on(ActivityManagerNative.class).field("gDefault").get();
             }
-            IActivityManager activityManagerProxy = ActivityManagerProxy.newInstance(this, defaultSingleton.get());
+            IActivityManager origin = defaultSingleton.get();
+            IActivityManager activityManagerProxy = (IActivityManager) Proxy.newProxyInstance(mContext.getClassLoader(), new Class[] { IActivityManager.class },
+                createActivityManagerProxy(origin));
 
             // Hook IActivityManager from ActivityManagerNative
             Reflector.with(defaultSingleton).field("mInstance").set(activityManagerProxy);
@@ -160,8 +179,8 @@ public class PluginManager {
             e.printStackTrace();
         }
     }
-
-    private void hookInstrumentationAndHandler() {
+    
+    protected void hookInstrumentationAndHandler() {
         try {
             ActivityThread activityThread = ActivityThread.currentActivityThread();
             Instrumentation baseInstrumentation = activityThread.getInstrumentation();
@@ -170,7 +189,7 @@ public class PluginManager {
                 System.exit(0);
             }
     
-            final VAInstrumentation instrumentation = new VAInstrumentation(this, baseInstrumentation);
+            final VAInstrumentation instrumentation = createInstrumentation(baseInstrumentation);
             
             Reflector.with(activityThread).field("mInstrumentation").set(instrumentation);
             Handler mainHandler = Reflector.with(activityThread).method("getHandler").call();
@@ -181,7 +200,7 @@ public class PluginManager {
         }
     }
 
-    private void hookIContentProviderAsNeeded() {
+    protected void hookIContentProviderAsNeeded() {
         Uri uri = Uri.parse(PluginContentResolver.getUri(mContext));
         mContext.getContentResolver().call(uri, "wakeup", null, null);
         try {
@@ -237,7 +256,7 @@ public class PluginManager {
             in.close();
         }
 
-        LoadedPlugin plugin = LoadedPlugin.create(this, this.mContext, apk);
+        LoadedPlugin plugin = createLoadedPlugin(apk);
         if (null != plugin) {
             this.mPlugins.put(plugin.getPackageName(), plugin);
             synchronized (mCallbacks) {

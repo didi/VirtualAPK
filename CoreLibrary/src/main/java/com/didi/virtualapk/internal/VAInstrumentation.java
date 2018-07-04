@@ -86,7 +86,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
     }
     
-    private void injectIntent(Intent intent) {
+    protected void injectIntent(Intent intent) {
         mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
         // null component is an implicitly intent
         if (intent.getComponent() != null) {
@@ -161,7 +161,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         mBase.callActivityOnCreate(activity, icicle, persistentState);
     }
     
-    private void injectActivity(Activity activity) {
+    protected void injectActivity(Activity activity) {
         final Intent intent = activity.getIntent();
         if (PluginUtil.isIntentFromPlugin(intent)) {
             Context base = activity.getBaseContext();
@@ -169,7 +169,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);
                 Reflector.with(base).field("mResources").set(plugin.getResources());
                 Reflector reflector = Reflector.with(activity);
-                reflector.field("mBase").set(new PluginContext(plugin, activity.getBaseContext()));
+                reflector.field("mBase").set(plugin.createPluginContext(activity.getBaseContext()));
                 reflector.field("mApplication").set(plugin.getApplication());
 
                 // set screenOrientation
@@ -224,7 +224,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         return mBase.getComponentName();
     }
 
-    private Activity newActivity(Activity activity) {
+    protected Activity newActivity(Activity activity) {
         synchronized (mActivities) {
             for (int i = mActivities.size() - 1; i >= 0; i--) {
                 if (mActivities.get(i).get() == null) {

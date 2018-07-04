@@ -78,11 +78,7 @@ public final class LoadedPlugin {
 
     public static final String TAG = "LoadedPlugin";
 
-    public static LoadedPlugin create(PluginManager pluginManager, Context host, File apk) throws Exception {
-        return new LoadedPlugin(pluginManager, host, apk);
-    }
-
-    private static ClassLoader createClassLoader(Context context, File apk, File libsDir, ClassLoader parent) {
+    protected ClassLoader createClassLoader(Context context, File apk, File libsDir, ClassLoader parent) {
         File dexOutputDir = context.getDir(Constants.OPTIMIZE_DIR, Context.MODE_PRIVATE);
         String dexOutputPath = dexOutputDir.getAbsolutePath();
         DexClassLoader loader = new DexClassLoader(apk.getAbsolutePath(), dexOutputPath, libsDir.getAbsolutePath(), parent);
@@ -98,7 +94,7 @@ public final class LoadedPlugin {
         return loader;
     }
 
-    private static AssetManager createAssetManager(Context context, File apk) {
+    protected AssetManager createAssetManager(Context context, File apk) {
         try {
             AssetManager am = AssetManager.class.newInstance();
             Reflector.with(am).method("addAssetPath", String.class).call(apk.getAbsolutePath());
@@ -109,7 +105,7 @@ public final class LoadedPlugin {
         }
     }
 
-    private static Resources createResources(Context context, String packageName, File apk) throws Exception {
+    protected Resources createResources(Context context, String packageName, File apk) throws Exception {
         if (Constants.COMBINE_RESOURCES) {
             return ResourcesManager.createResources(context, packageName, apk);
         } else {
@@ -118,33 +114,45 @@ public final class LoadedPlugin {
             return new Resources(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
         }
     }
+    
+    protected PluginPackageManager createPluginPackageManager() {
+        return new PluginPackageManager();
+    }
+    
+    public PluginContext createPluginContext(Context context) {
+        if (context == null) {
+            return new PluginContext(this);
+        }
+        
+        return new PluginContext(this, context);
+    }
 
-    private static ResolveInfo chooseBestActivity(Intent intent, String s, int flags, List<ResolveInfo> query) {
+    protected ResolveInfo chooseBestActivity(Intent intent, String s, int flags, List<ResolveInfo> query) {
         return query.get(0);
     }
 
-    private final String mLocation;
-    private PluginManager mPluginManager;
-    private Context mHostContext;
-    private Context mPluginContext;
-    private final File mNativeLibDir;
-    private final PackageParser.Package mPackage;
-    private final PackageInfo mPackageInfo;
-    private Resources mResources;
-    private ClassLoader mClassLoader;
-    private PluginPackageManager mPackageManager;
+    protected final String mLocation;
+    protected PluginManager mPluginManager;
+    protected Context mHostContext;
+    protected Context mPluginContext;
+    protected final File mNativeLibDir;
+    protected final PackageParser.Package mPackage;
+    protected final PackageInfo mPackageInfo;
+    protected Resources mResources;
+    protected ClassLoader mClassLoader;
+    protected PluginPackageManager mPackageManager;
 
-    private Map<ComponentName, ActivityInfo> mActivityInfos;
-    private Map<ComponentName, ServiceInfo> mServiceInfos;
-    private Map<ComponentName, ActivityInfo> mReceiverInfos;
-    private Map<ComponentName, ProviderInfo> mProviderInfos;
-    private Map<String, ProviderInfo> mProviders; // key is authorities of provider
-    private Map<ComponentName, InstrumentationInfo> mInstrumentationInfos;
+    protected Map<ComponentName, ActivityInfo> mActivityInfos;
+    protected Map<ComponentName, ServiceInfo> mServiceInfos;
+    protected Map<ComponentName, ActivityInfo> mReceiverInfos;
+    protected Map<ComponentName, ProviderInfo> mProviderInfos;
+    protected Map<String, ProviderInfo> mProviders; // key is authorities of provider
+    protected Map<ComponentName, InstrumentationInfo> mInstrumentationInfos;
 
-    private Application mApplication;
+    protected Application mApplication;
 
     @UiThread
-    LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws Exception {
+    public LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws Exception {
         if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
             throw new RuntimeException("plugin mast be created by UI thread.");
         }
@@ -176,8 +184,8 @@ public final class LoadedPlugin {
         this.mPackageInfo.versionCode = this.mPackage.mVersionCode;
         this.mPackageInfo.versionName = this.mPackage.mVersionName;
         this.mPackageInfo.permissions = new PermissionInfo[0];
-        this.mPackageManager = new PluginPackageManager();
-        this.mPluginContext = new PluginContext(this);
+        this.mPackageManager = createPluginPackageManager();
+        this.mPluginContext = createPluginContext(null);
         this.mNativeLibDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
         this.mResources = createResources(context, getPackageName(), apk);
         this.mClassLoader = createClassLoader(context, apk, this.mNativeLibDir, context.getClassLoader());
@@ -233,7 +241,7 @@ public final class LoadedPlugin {
         this.mPackageInfo.receivers = receivers.values().toArray(new ActivityInfo[receivers.size()]);
     }
 
-    private void tryToCopyNativeLib(File apk) throws Exception {
+    protected void tryToCopyNativeLib(File apk) throws Exception {
         PluginUtil.copyNativeLib(apk, mHostContext, mPackageInfo, mNativeLibDir);
     }
 
@@ -371,7 +379,7 @@ public final class LoadedPlugin {
         Reflector.QuietReflector.with(this.mResources).field("mThemeResId").set(resid);
     }
 
-    private Application makeApplication(boolean forceDefaultAppClass, Instrumentation instrumentation) {
+    protected Application makeApplication(boolean forceDefaultAppClass, Instrumentation instrumentation) {
         if (null != this.mApplication) {
             return this.mApplication;
         }
@@ -493,7 +501,7 @@ public final class LoadedPlugin {
         return this.mProviders.get(name);
     }
 
-    private boolean match(PackageParser.Component component, ComponentName target) {
+    protected boolean match(PackageParser.Component component, ComponentName target) {
         ComponentName source = component.getComponentName();
         if (source == target) return true;
         if (source != null && target != null
@@ -508,9 +516,9 @@ public final class LoadedPlugin {
     /**
      * @author johnsonlee
      */
-    private class PluginPackageManager extends PackageManager {
+    protected class PluginPackageManager extends PackageManager {
 
-        private PackageManager mHostPackageManager = mHostContext.getPackageManager();
+        protected PackageManager mHostPackageManager = mHostContext.getPackageManager();
 
         @Override
         public PackageInfo getPackageInfo(String packageName, int flags) throws NameNotFoundException {
