@@ -26,6 +26,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.IContentProvider;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -77,15 +78,38 @@ public class PluginManager {
     public static PluginManager getInstance(Context base) {
         if (sInstance == null) {
             synchronized (PluginManager.class) {
-                if (sInstance == null)
-                    sInstance = new PluginManager(base);
+                if (sInstance == null) {
+                    sInstance = createInstance(base);
+                }
             }
         }
 
         return sInstance;
     }
+    
+    private static PluginManager createInstance(Context context) {
+        try {
+            String factoryClass = context.getPackageManager()
+                                         .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA)
+                                         .metaData.getString("VA_FACTORY");
+            if (factoryClass == null) {
+                return new PluginManager(context);
+            }
+            
+            PluginManager pluginManager = Reflector.on(factoryClass).method("create", Context.class).call(context);
+            if (pluginManager != null) {
+                Log.d(TAG, "Created a instance of " + pluginManager.getClass());
+                return pluginManager;
+            }
+    
+        } catch (Exception e) {
+            Log.w(TAG, "Created the instance error!", e);
+        }
+    
+        return new PluginManager(context);
+    }
 
-    private PluginManager(Context context) {
+    protected PluginManager(Context context) {
         Context app = context.getApplicationContext();
         if (app == null) {
             this.mContext = context;
