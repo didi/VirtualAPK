@@ -5,11 +5,13 @@ import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.tasks.AppPreBuildTask
 import com.android.builder.model.Dependencies
 import com.android.builder.model.SyncIssue
+import com.didi.virtualapk.Constants
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
+import com.google.common.collect.ImmutableMap
 import org.gradle.api.Project
 
 import java.util.function.Consumer
@@ -60,12 +62,19 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
      */
     @Override
     void afterTaskExecute(AppPreBuildTask task) {
-        Dependencies dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, new Consumer<SyncIssue>() {
+        Consumer consumer = new Consumer<SyncIssue>() {
             @Override
             void accept(SyncIssue syncIssue) {
                 Log.i 'PrepareDependenciesHooker', "Error: ${syncIssue}"
             }
-        })
+        }
+        Dependencies dependencies
+        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+            ImmutableMap<String, String> buildMapping = com.android.build.gradle.internal.ide.ModelBuilder.computeBuildMapping(project.gradle)
+            dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, buildMapping, consumer)
+        } else {
+            dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, consumer)
+        }
 
         dependencies.libraries.each {
             def mavenCoordinates = it.resolvedCoordinates

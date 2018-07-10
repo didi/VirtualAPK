@@ -6,6 +6,7 @@ import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.scope.TaskOutputHolder
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.sdklib.BuildToolInfo
+import com.didi.virtualapk.Constants
 import com.didi.virtualapk.aapt.Aapt
 import com.didi.virtualapk.collector.ResourceCollector
 import com.didi.virtualapk.collector.res.ResourceEntry
@@ -57,8 +58,15 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
      */
     @Override
     void afterTaskExecute(ProcessAndroidResources par) {
-        variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.PROCESSED_RES).each {
-            repackage(par, it.outputFile)
+        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+            File outputFile = com.android.build.gradle.internal.scope.ExistingBuildElements
+                    .from(TaskOutputHolder.TaskOutputType.PROCESSED_RES, scope.getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES))
+                    .element(variantData.outputScope.mainSplit).outputFile
+            repackage(par, outputFile)
+        } else {
+            variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.PROCESSED_RES).each {
+                repackage(par, it.outputFile)
+            }
         }
     }
 
@@ -105,7 +113,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         def resIdMap = resourceCollector.resIdMap
 
         def rSymbolFile = par.textSymbolOutputFile
-        def libRefTable = ["${virtualApk.packageId}": par.packageForR]
+        def libRefTable = ["${virtualApk.packageId}": par.applicationId]
         def filteredResources = [] as HashSet<String>
         def updatedResources = [] as HashSet<String>
 

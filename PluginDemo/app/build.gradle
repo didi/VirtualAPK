@@ -1,15 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "25.0.2"
+    compileSdkVersion VERSION_COMPILE_SDK
+    buildToolsVersion VERSION_BUILD_TOOLS
 
     defaultConfig {
         applicationId "com.didi.virtualapk.demo"
-        minSdkVersion 15
-        targetSdkVersion 15
+        minSdkVersion VERSION_MIN_SDK
+        targetSdkVersion VERSION_TARGET_SDK
         versionName "1.0.0"
         versionCode 1
+    }
+    compileOptions {
+        sourceCompatibility SOURCE_COMPATIBILITY
     }
 
     flavorDimensions "demo"
@@ -50,8 +53,8 @@ android {
 dependencies {
     // the following aars are also compiled in host project, so they will be filterd when build plugin apk.
     // but, wo can still visit their Class and Resources.
-    compile 'com.android.support:appcompat-v7:23.4.0'
-    compile 'com.didi.virtualapk:core:0.9.6-dev'
+    implementation 'com.android.support:appcompat-v7:23.4.0'
+    implementation 'com.didi.virtualapk:core:0.9.6'
 }
 
 apply plugin: 'com.didi.virtualapk.plugin'

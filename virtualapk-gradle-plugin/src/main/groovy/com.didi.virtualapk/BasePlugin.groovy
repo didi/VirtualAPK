@@ -2,11 +2,10 @@ package com.didi.virtualapk
 
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.internal.TaskContainerAdaptor
 import com.android.build.gradle.internal.TaskFactory
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
 import com.didi.virtualapk.tasks.AssemblePlugin
 import com.didi.virtualapk.utils.Log
@@ -44,6 +43,14 @@ public abstract class BasePlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         this.project = project
+        project.ext.set(Constants.GRADLE_3_1_0, false)
+
+        try {
+            Class.forName('com.android.builder.core.VariantConfiguration')
+        } catch (Throwable e) {
+            // com.android.tools.build:gradle:3.1.0
+            project.ext.set(Constants.GRADLE_3_1_0, true)
+        }
 
         AppPlugin appPlugin = project.plugins.findPlugin(AppPlugin)
 
@@ -69,7 +76,12 @@ public abstract class BasePlugin implements Plugin<Project> {
 
         project.extensions.create('virtualApk', VAExtention)
 
-        taskFactory = new TaskContainerAdaptor(project.tasks)
+        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+            TaskManager taskManager = Reflect.on(appPlugin).field('taskManager').get()
+            taskFactory = taskManager.getTaskFactory()
+        } else {
+            taskFactory = Reflect.on('com.android.build.gradle.internal.TaskContainerAdaptor').create(project.tasks).get()
+        }
         project.afterEvaluate {
 
             if (!checkVariantFactoryInvoked) {
@@ -84,12 +96,18 @@ public abstract class BasePlugin implements Plugin<Project> {
 
                     taskFactory.create(variantPluginTaskName, AssemblePlugin, configAction)
 
-                    taskFactory.named("assemblePlugin", new Action<Task>() {
+                    Action action = new Action<Task>() {
                         @Override
                         void execute(Task task) {
                             task.dependsOn(variantPluginTaskName)
                         }
-                    })
+                    }
+
+                    if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+                        taskFactory.configure("assemblePlugin", action)
+                    } else {
+                        taskFactory.named("assemblePlugin", action)
+                    }
                 }
             }
         }
@@ -120,7 +138,12 @@ public abstract class BasePlugin implements Plugin<Project> {
             }
 
             appPlugin.variantManager.productFlavors.each {
-                String variantName = VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+                String variantName
+                if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+                    variantName = com.android.build.gradle.internal.core.VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+                } else {
+                    variantName = com.android.builder.core.VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+                }
                 def variantPluginTaskName = createPluginTaskName("assemble${variantName.capitalize()}Plugin".toString())
                 pluginTasks.add(variantPluginTaskName)
             }

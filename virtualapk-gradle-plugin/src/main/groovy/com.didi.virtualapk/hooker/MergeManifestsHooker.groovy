@@ -3,6 +3,7 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.scope.TaskOutputHolder
 import com.android.build.gradle.tasks.MergeManifests
+import com.didi.virtualapk.Constants
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
@@ -57,8 +58,15 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
      */
     @Override
     void afterTaskExecute(MergeManifests task) {
-        variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).each {
-            rewrite(it.outputFile)
+        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+            File outputFile = com.android.build.gradle.internal.scope.ExistingBuildElements
+                    .from(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS, scope.getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS))
+                    .element(variantData.outputScope.mainSplit).outputFile
+            rewrite(outputFile)
+        } else {
+            variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).each {
+                rewrite(it.outputFile)
+            }
         }
     }
     

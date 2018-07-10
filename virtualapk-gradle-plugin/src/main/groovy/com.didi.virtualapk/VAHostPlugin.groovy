@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
+import com.google.common.collect.ImmutableMap
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ComponentIdentifier
@@ -32,7 +33,15 @@ public class VAHostPlugin implements Plugin<Project> {
     public void apply(Project project) {
 
         this.project = project
+        project.ext.set(Constants.GRADLE_3_1_0, false)
 
+        try {
+            Class.forName('com.android.builder.core.VariantConfiguration')
+        } catch (Throwable e) {
+            // com.android.tools.build:gradle:3.1.0
+            project.ext.set(Constants.GRADLE_3_1_0, true)
+        }
+        
         //The target project must be a android application module
         if (!project.plugins.hasPlugin('com.android.application')) {
             Log.e(TAG, "application required!")
@@ -86,8 +95,15 @@ public class VAHostPlugin implements Plugin<Project> {
             FileUtil.saveFile(vaHostDir, "versions", {
                 List<String> deps = new ArrayList<String>()
                 Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
-                Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
-                        applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null)
+                Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts
+                if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+                    ImmutableMap<String, String> buildMapping = com.android.build.gradle.internal.ide.ModelBuilder.computeBuildMapping(project.gradle)
+                    compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
+                            applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null, buildMapping)
+                } else {
+                    compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
+                            applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null)
+                }
 
                 compileArtifacts.each { ArtifactDependencyGraph.HashableResolvedArtifactResult artifact ->
                     ComponentIdentifier id = artifact.id.componentIdentifier

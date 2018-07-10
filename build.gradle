@@ -16,7 +16,7 @@ buildscript {
 
 ext {
     VERSION_COMPILE_SDK = 27
-    VERSION_BUILD_TOOLS = '25.0.2'
+    VERSION_BUILD_TOOLS = '26.0.2'
 
     VERSION_MIN_SDK = 15
     VERSION_TARGET_SDK = 25

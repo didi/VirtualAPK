@@ -1,10 +1,14 @@
 package com.didi.virtualapk
 
+import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.ProjectOptions
 import com.didi.virtualapk.hooker.*
 import com.didi.virtualapk.transform.StripClassAndResTransform
 import com.didi.virtualapk.utils.FileBinaryCategory
 import com.didi.virtualapk.utils.Log
+import com.didi.virtualapk.utils.Reflect
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -220,6 +224,14 @@ class VAPlugin extends BasePlugin {
                 dst << hostMapping
             }
         }
+
+        AppPlugin appPlugin = project.plugins.findPlugin(AppPlugin)
+        ProjectOptions projectOptions = Reflect.on(appPlugin).field('projectOptions').get()
+        if (projectOptions.get(BooleanOption.ENABLE_DEX_ARCHIVE)) {
+            throw new InvalidUserDataException("Can't using incremental dexing mode, please add 'android.useDexArchive=false' in gradle.properties of :${project.name}.")
+        }
+//        project.ext.set('android.useDexArchive', false)
+        
     }
 
     static class VATaskHookerManager extends TaskHookerManager {
