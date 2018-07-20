@@ -33,8 +33,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 
-import static com.didi.virtualapk.delegate.RemoteContentProvider.KEY_WRAPPER_URI;
-
 /**
  * Created by renyugang on 16/12/8.
  */
@@ -84,7 +82,7 @@ public class IContentProviderProxy implements InvocationHandler {
         if (method.getName().equals("call")) {
             bundleInCallMethod = getBundleParameter(args);
             if (bundleInCallMethod != null) {
-                String uriString = bundleInCallMethod.getString(KEY_WRAPPER_URI);
+                String uriString = bundleInCallMethod.getString(RemoteContentProvider.KEY_WRAPPER_URI);
                 if (uriString != null) {
                     uri = Uri.parse(uriString);
                 }
@@ -100,14 +98,9 @@ public class IContentProviderProxy implements InvocationHandler {
         if (info != null) {
             String pkg = info.packageName;
             LoadedPlugin plugin = pluginManager.getLoadedPlugin(pkg);
-            String pluginUri = Uri.encode(uri.toString());
-            StringBuilder builder = new StringBuilder(PluginContentResolver.getUri(mContext));
-            builder.append("/?plugin=" + plugin.getLocation());
-            builder.append("&pkg=" + pkg);
-            builder.append("&uri=" + pluginUri);
-            Uri wrapperUri = Uri.parse(builder.toString());
+            Uri wrapperUri = PluginContentResolver.wrapperUri(plugin, uri);
             if (method.getName().equals("call")) {
-                bundleInCallMethod.putString(KEY_WRAPPER_URI, wrapperUri.toString());
+                bundleInCallMethod.putString(RemoteContentProvider.KEY_WRAPPER_URI, wrapperUri.toString());
             } else {
                 args[index] = wrapperUri;
             }

@@ -16,6 +16,10 @@ public class Resources {
         throw new RuntimeException("Stub!");
     }
     
+    public int getColor(int id) throws NotFoundException {
+        throw new RuntimeException("Stub!");
+    }
+    
     public Configuration getConfiguration() {
         throw new RuntimeException("Stub!");
     }
@@ -25,6 +29,10 @@ public class Resources {
     }
     
     public Drawable getDrawable(int id) throws NotFoundException {
+        throw new RuntimeException("Stub!");
+    }
+    
+    public String getString(int id) throws NotFoundException {
         throw new RuntimeException("Stub!");
     }
     
@@ -41,6 +49,10 @@ public class Resources {
     }
     
     public final Theme newTheme() {
+        throw new RuntimeException("Stub!");
+    }
+    
+    public void updateConfiguration(Configuration config, DisplayMetrics metrics) {
         throw new RuntimeException("Stub!");
     }
     

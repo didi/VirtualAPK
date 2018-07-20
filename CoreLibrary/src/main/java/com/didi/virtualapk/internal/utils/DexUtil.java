@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.didi.virtualapk.utils;
+package com.didi.virtualapk.internal.utils;
 
 import android.app.ActivityThread;
 import android.content.Context;
 import android.os.Build;
 
 import com.didi.virtualapk.internal.Constants;
+import com.didi.virtualapk.utils.Reflector;
 
 import java.io.File;
 import java.lang.reflect.Array;

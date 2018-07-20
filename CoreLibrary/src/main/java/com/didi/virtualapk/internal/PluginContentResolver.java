@@ -94,7 +94,7 @@ public class PluginContentResolver extends ContentResolverWrapper {
     public static Uri wrapperUri(LoadedPlugin loadedPlugin, Uri pluginUri) {
         String pkg = loadedPlugin.getPackageName();
         String pluginUriString = Uri.encode(pluginUri.toString());
-        StringBuilder builder = new StringBuilder(PluginContentResolver.getUri(loadedPlugin.getHostContext()));
+        StringBuilder builder = new StringBuilder(RemoteContentProvider.getUri(loadedPlugin.getHostContext()));
         builder.append("/?plugin=" + loadedPlugin.getLocation());
         builder.append("&pkg=" + pkg);
         builder.append("&uri=" + pluginUriString);
@@ -104,12 +104,12 @@ public class PluginContentResolver extends ContentResolverWrapper {
 
     @Deprecated
     public static String getAuthority(Context context) {
-        return context.getPackageName() + ".VirtualAPK.Provider";
+        return RemoteContentProvider.getAuthority(context);
     }
 
     @Deprecated
     public static String getUri(Context context) {
-        return "content://" + getAuthority(context);
+        return RemoteContentProvider.getUri(context);
     }
 
     @Keep

@@ -61,7 +61,7 @@ class ResourcesManager {
         return resources;
     }
     
-    private static synchronized Resources createResourcesSimple(Context hostContext, String apk) throws Exception {
+    private static Resources createResourcesSimple(Context hostContext, String apk) throws Exception {
         Resources hostResources = hostContext.getResources();
         Resources newResources = null;
         AssetManager assetManager;
@@ -69,15 +69,24 @@ class ResourcesManager {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             assetManager = AssetManager.class.newInstance();
             reflector.bind(assetManager);
-            reflector.call(hostContext.getApplicationInfo().sourceDir);
+            final int cookie1 = reflector.call(hostContext.getApplicationInfo().sourceDir);;
+            if (cookie1 == 0) {
+                throw new RuntimeException("createResources failed, can't addAssetPath for " + hostContext.getApplicationInfo().sourceDir);
+            }
         } else {
             assetManager = hostResources.getAssets();
             reflector.bind(assetManager);
         }
-        reflector.call(apk);
+        final int cookie2 = reflector.call(apk);
+        if (cookie2 == 0) {
+            throw new RuntimeException("createResources failed, can't addAssetPath for " + apk);
+        }
         List<LoadedPlugin> pluginList = PluginManager.getInstance(hostContext).getAllLoadedPlugins();
         for (LoadedPlugin plugin : pluginList) {
-            reflector.call(plugin.getLocation());
+            final int cookie3 = reflector.call(plugin.getLocation());
+            if (cookie3 == 0) {
+                throw new RuntimeException("createResources failed, can't addAssetPath for " + plugin.getLocation());
+            }
         }
         if (isMiUi(hostResources)) {
             newResources = MiUiResourcesCompat.createResources(hostResources, assetManager);
@@ -111,22 +120,14 @@ class ResourcesManager {
 
             Object activityThread = ActivityThread.currentActivityThread();
             Object resManager;
-            if (Build.VERSION.SDK_INT >= 19) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 resManager = android.app.ResourcesManager.getInstance();
             } else {
                 resManager = Reflector.with(activityThread).field("mResourcesManager").get();
             }
-            if (Build.VERSION.SDK_INT < 24) {
-                Map<Object, WeakReference<Resources>> map = Reflector.with(resManager).field("mActiveResources").get();
-                Object key = map.keySet().iterator().next();
-                map.put(key, new WeakReference<>(resources));
-            } else {
-                // still hook Android N Resources, even though it's unnecessary, then nobody will be strange.
-                Map map = Reflector.QuietReflector.with(resManager).field("mResourceImpls").get();
-                Object key = map.keySet().iterator().next();
-                Object resourcesImpl = Reflector.QuietReflector.with(resources).field("mResourcesImpl").get();
-                map.put(key, new WeakReference<>(resourcesImpl));
-            }
+            Map<Object, WeakReference<Resources>> map = Reflector.with(resManager).field("mActiveResources").get();
+            Object key = map.keySet().iterator().next();
+            map.put(key, new WeakReference<>(resources));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -279,6 +280,7 @@ class ResourcesManager {
 
     private static final class ResourcesManagerCompatForN {
         
+        @TargetApi(Build.VERSION_CODES.KITKAT)
         public static void resolveResourcesImplMap(Map<ResourcesKey, WeakReference<ResourcesImpl>> originalMap, Map<ResourcesKey, WeakReference<ResourcesImpl>> resolvedMap, String baseResDir, String newAssetPath) throws Exception {
             for (Map.Entry<ResourcesKey, WeakReference<ResourcesImpl>> entry : originalMap.entrySet()) {
                 ResourcesKey key = entry.getKey();

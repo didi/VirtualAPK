@@ -32,7 +32,7 @@ import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.LoadedPlugin;
-import com.didi.virtualapk.utils.PluginUtil;
+import com.didi.virtualapk.internal.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
 
 import java.lang.reflect.Method;

@@ -46,9 +46,13 @@ import java.util.zip.ZipFile;
 public class ZipVerifyUtil {
 
     public static boolean verifyZip(Context context, String zipPath) {
+        return verifyZip(context, zipPath, "test.cer");
+    }
+    
+    public static boolean verifyZip(Context context, String zipPath, String cerName) {
         try {
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            InputStream in = context.getAssets().open("test.cer");
+            InputStream in = context.getAssets().open(cerName);
             Certificate certificate = certificateFactory.generateCertificate(in);
             in.close();
             return verifyZip(zipPath, certificate);

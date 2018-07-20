@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.didi.virtualapk.utils;
+package com.didi.virtualapk.internal.utils;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -34,6 +34,7 @@ import android.util.Log;
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
+import com.didi.virtualapk.utils.Reflector;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -95,7 +96,7 @@ public class PluginUtil {
             return appInfo.theme;
         }
 
-        return PluginUtil.selectDefaultTheme(0, Build.VERSION.SDK_INT);
+        return selectDefaultTheme(0, Build.VERSION.SDK_INT);
     }
 
     public static int selectDefaultTheme(final int curTheme, final int targetSdkVersion) {
@@ -106,7 +107,7 @@ public class PluginUtil {
                 android.R.style.Theme_DeviceDefault_Light_DarkActionBar);
     }
 
-    private static int selectSystemTheme(final int curTheme, final int targetSdkVersion, final int orig, final int holo, final int dark, final int deviceDefault) {
+    public static int selectSystemTheme(final int curTheme, final int targetSdkVersion, final int orig, final int holo, final int dark, final int deviceDefault) {
         if (curTheme != 0) {
             return curTheme;
         }

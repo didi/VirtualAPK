@@ -209,4 +209,12 @@ public class RemoteContentProvider extends ContentProvider {
         return null;
     }
 
+    public static String getAuthority(Context context) {
+        return context.getPackageName() + ".VirtualAPK.Provider";
+    }
+    
+    public static String getUri(Context context) {
+        return "content://" + getAuthority(context);
+    }
+    
 }

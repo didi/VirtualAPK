@@ -31,17 +31,18 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Singleton;
 
 import com.didi.virtualapk.delegate.ActivityManagerProxy;
 import com.didi.virtualapk.delegate.IContentProviderProxy;
+import com.didi.virtualapk.delegate.RemoteContentProvider;
 import com.didi.virtualapk.internal.ComponentsHandler;
 import com.didi.virtualapk.internal.LoadedPlugin;
-import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.internal.VAInstrumentation;
-import com.didi.virtualapk.utils.PluginUtil;
+import com.didi.virtualapk.internal.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
 import com.didi.virtualapk.utils.RunUtil;
 
@@ -66,14 +67,15 @@ public class PluginManager {
     private static volatile PluginManager sInstance = null;
 
     // Context of host app
-    private Context mContext;
-    private ComponentsHandler mComponentsHandler;
-    private Map<String, LoadedPlugin> mPlugins = new ConcurrentHashMap<>();
-    private final List<Callback> mCallbacks = new ArrayList<>();
+    protected final Context mContext;
+    protected final Application mApplication;
+    protected ComponentsHandler mComponentsHandler;
+    protected final Map<String, LoadedPlugin> mPlugins = new ConcurrentHashMap<>();
+    protected final List<Callback> mCallbacks = new ArrayList<>();
 
-    private VAInstrumentation mInstrumentation; // Hooked instrumentation
-    private IActivityManager mActivityManager; // Hooked IActivityManager binder
-    private IContentProvider mIContentProvider; // Hooked IContentProvider binder
+    protected VAInstrumentation mInstrumentation; // Hooked instrumentation
+    protected IActivityManager mActivityManager; // Hooked IActivityManager binder
+    protected IContentProvider mIContentProvider; // Hooked IContentProvider binder
 
     public static PluginManager getInstance(Context base) {
         if (sInstance == null) {
@@ -89,14 +91,22 @@ public class PluginManager {
     
     private static PluginManager createInstance(Context context) {
         try {
-            String factoryClass = context.getPackageManager()
-                                         .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA)
-                                         .metaData.getString("VA_FACTORY");
+            Bundle metaData = context.getPackageManager()
+                                     .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA)
+                                     .metaData;
+            
+            if (metaData == null) {
+                return new PluginManager(context);
+            }
+            
+            String factoryClass = metaData.getString("VA_FACTORY");
+            
             if (factoryClass == null) {
                 return new PluginManager(context);
             }
             
             PluginManager pluginManager = Reflector.on(factoryClass).method("create", Context.class).call(context);
+            
             if (pluginManager != null) {
                 Log.d(TAG, "Created a instance of " + pluginManager.getClass());
                 return pluginManager;
@@ -110,17 +120,25 @@ public class PluginManager {
     }
 
     protected PluginManager(Context context) {
-        Context app = context.getApplicationContext();
-        if (app == null) {
-            this.mContext = context;
+        if (context instanceof Application) {
+            this.mApplication = (Application) context;
+            this.mContext = mApplication.getBaseContext();
         } else {
-            this.mContext = ((Application)app).getBaseContext();
+            final Context app = context.getApplicationContext();
+            if (app == null) {
+                this.mContext = context;
+                this.mApplication = ActivityThread.currentApplication();
+            } else {
+                this.mApplication = (Application) app;
+                this.mContext = mApplication.getBaseContext();
+            }
         }
-        prepare();
+        
+        mComponentsHandler = createComponentsHandler();
+        hookCurrentProcess();
     }
 
-    private void prepare() {
-        mComponentsHandler = createComponentsHandler();
+    protected void hookCurrentProcess() {
         hookInstrumentationAndHandler();
         hookSystemServices();
         hookDataBindingUtil();
@@ -136,6 +154,10 @@ public class PluginManager {
     }
 
     protected void doInWorkThread() {
+    }
+    
+    public Application getHostApplication() {
+        return this.mApplication;
     }
     
     protected ComponentsHandler createComponentsHandler() {
@@ -208,10 +230,10 @@ public class PluginManager {
         try {
             ActivityThread activityThread = ActivityThread.currentActivityThread();
             Instrumentation baseInstrumentation = activityThread.getInstrumentation();
-            if (baseInstrumentation.getClass().getName().contains("lbe")) {
-                // reject executing in paralell space, for example, lbe.
-                System.exit(0);
-            }
+//            if (baseInstrumentation.getClass().getName().contains("lbe")) {
+//                // reject executing in paralell space, for example, lbe.
+//                System.exit(0);
+//            }
     
             final VAInstrumentation instrumentation = createInstrumentation(baseInstrumentation);
             
@@ -225,14 +247,14 @@ public class PluginManager {
     }
 
     protected void hookIContentProviderAsNeeded() {
-        Uri uri = Uri.parse(PluginContentResolver.getUri(mContext));
+        Uri uri = Uri.parse(RemoteContentProvider.getUri(mContext));
         mContext.getContentResolver().call(uri, "wakeup", null, null);
         try {
             Field authority = null;
-            Field mProvider = null;
+            Field provider = null;
             ActivityThread activityThread = ActivityThread.currentActivityThread();
-            Map mProviderMap = Reflector.with(activityThread).field("mProviderMap").get();
-            Iterator iter = mProviderMap.entrySet().iterator();
+            Map providerMap = Reflector.with(activityThread).field("mProviderMap").get();
+            Iterator iter = providerMap.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 Object key = entry.getKey();
@@ -247,12 +269,12 @@ public class PluginManager {
                     }
                     auth = (String) authority.get(key);
                 }
-                if (auth.equals(PluginContentResolver.getAuthority(mContext))) {
-                    if (mProvider == null) {
-                        mProvider = val.getClass().getDeclaredField("mProvider");
-                        mProvider.setAccessible(true);
+                if (auth.equals(RemoteContentProvider.getAuthority(mContext))) {
+                    if (provider == null) {
+                        provider = val.getClass().getDeclaredField("mProvider");
+                        provider.setAccessible(true);
                     }
-                    IContentProvider rawProvider = (IContentProvider) mProvider.get(val);
+                    IContentProvider rawProvider = (IContentProvider) provider.get(val);
                     IContentProvider proxy = IContentProviderProxy.newInstance(mContext, rawProvider);
                     mIContentProvider = proxy;
                     Log.d(TAG, "hookIContentProvider succeed : " + mIContentProvider);
@@ -281,17 +303,16 @@ public class PluginManager {
         }
 
         LoadedPlugin plugin = createLoadedPlugin(apk);
-        if (null != plugin) {
-            this.mPlugins.put(plugin.getPackageName(), plugin);
-            synchronized (mCallbacks) {
-                for (int i = 0; i < mCallbacks.size(); i++) {
-                    mCallbacks.get(i).onAddedLoadedPlugin(plugin);
-                }
+        
+        if (null == plugin) {
+            throw new RuntimeException("Can't load plugin which is invalid: " + apk.getAbsolutePath());
+        }
+        
+        this.mPlugins.put(plugin.getPackageName(), plugin);
+        synchronized (mCallbacks) {
+            for (int i = 0; i < mCallbacks.size(); i++) {
+                mCallbacks.get(i).onAddedLoadedPlugin(plugin);
             }
-            // try to invoke plugin's application
-            plugin.invokeApplication();
-        } else {
-            throw  new RuntimeException("Can't load plugin which is invalid: " + apk.getAbsolutePath());
         }
     }
 

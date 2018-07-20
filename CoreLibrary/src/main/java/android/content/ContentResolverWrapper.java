@@ -52,7 +52,8 @@ public abstract class ContentResolverWrapper extends ContentResolver {
     @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
     @Override
     public void appNotRespondingViaProvider(IContentProvider icp) {
-        mBase.appNotRespondingViaProvider(icp);
+        // dark greylist in Android P
+//        mBase.appNotRespondingViaProvider(icp);
     }
 
 }

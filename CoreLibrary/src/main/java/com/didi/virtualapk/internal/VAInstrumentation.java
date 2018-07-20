@@ -36,7 +36,7 @@ import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.delegate.StubActivity;
-import com.didi.virtualapk.utils.PluginUtil;
+import com.didi.virtualapk.internal.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
 
 import java.lang.ref.WeakReference;
@@ -51,11 +51,11 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
     public static final String TAG = "VAInstrumentation";
     public static final int LAUNCH_ACTIVITY         = 100;
 
-    private Instrumentation mBase;
+    protected Instrumentation mBase;
     
-    private final ArrayList<WeakReference<Activity>> mActivities = new ArrayList<>();
+    protected final ArrayList<WeakReference<Activity>> mActivities = new ArrayList<>();
 
-    PluginManager mPluginManager;
+    protected PluginManager mPluginManager;
 
     public VAInstrumentation(PluginManager pluginManager, Instrumentation base) {
         this.mPluginManager = pluginManager;
@@ -130,12 +130,8 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
             activity.setIntent(intent);
     
-            try {
-                // for 4.1+
-                Reflector.with(activity).field("mResources").set(plugin.getResources());
-            } catch (Exception ignored) {
-                // ignored.
-            }
+            // for 4.1+
+            Reflector.QuietReflector.with(activity).field("mResources").set(plugin.getResources());
     
             return newActivity(activity);
         }

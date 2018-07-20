@@ -47,17 +47,15 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Looper;
 import android.os.Process;
 import android.os.UserHandle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
 
 import com.didi.virtualapk.PluginManager;
-import com.didi.virtualapk.utils.DexUtil;
-import com.didi.virtualapk.utils.PackageParserCompat;
-import com.didi.virtualapk.utils.PluginUtil;
+import com.didi.virtualapk.internal.utils.DexUtil;
+import com.didi.virtualapk.internal.utils.PackageParserCompat;
+import com.didi.virtualapk.internal.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
 import com.didi.virtualapk.utils.RunUtil;
 
@@ -74,35 +72,30 @@ import dalvik.system.DexClassLoader;
 /**
  * Created by renyugang on 16/8/9.
  */
-public final class LoadedPlugin {
+public class LoadedPlugin {
 
     public static final String TAG = "LoadedPlugin";
 
-    protected ClassLoader createClassLoader(Context context, File apk, File libsDir, ClassLoader parent) {
-        File dexOutputDir = context.getDir(Constants.OPTIMIZE_DIR, Context.MODE_PRIVATE);
+    protected File getDir(Context context, String name) {
+        return context.getDir(name, Context.MODE_PRIVATE);
+    }
+    
+    protected ClassLoader createClassLoader(Context context, File apk, File libsDir, ClassLoader parent) throws Exception {
+        File dexOutputDir = getDir(context, Constants.OPTIMIZE_DIR);
         String dexOutputPath = dexOutputDir.getAbsolutePath();
         DexClassLoader loader = new DexClassLoader(apk.getAbsolutePath(), dexOutputPath, libsDir.getAbsolutePath(), parent);
 
         if (Constants.COMBINE_CLASSLOADER) {
-            try {
-                DexUtil.insertDex(loader, parent);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            DexUtil.insertDex(loader, parent);
         }
 
         return loader;
     }
 
-    protected AssetManager createAssetManager(Context context, File apk) {
-        try {
-            AssetManager am = AssetManager.class.newInstance();
-            Reflector.with(am).method("addAssetPath", String.class).call(apk.getAbsolutePath());
-            return am;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    protected AssetManager createAssetManager(Context context, File apk) throws Exception {
+        AssetManager am = AssetManager.class.newInstance();
+        Reflector.with(am).method("addAssetPath", String.class).call(apk.getAbsolutePath());
+        return am;
     }
 
     protected Resources createResources(Context context, String packageName, File apk) throws Exception {
@@ -151,11 +144,7 @@ public final class LoadedPlugin {
 
     protected Application mApplication;
 
-    @UiThread
     public LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws Exception {
-        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-            throw new RuntimeException("plugin mast be created by UI thread.");
-        }
         this.mPluginManager = pluginManager;
         this.mHostContext = context;
         this.mLocation = apk.getAbsolutePath();
@@ -239,6 +228,9 @@ public final class LoadedPlugin {
         }
         this.mReceiverInfos = Collections.unmodifiableMap(receivers);
         this.mPackageInfo.receivers = receivers.values().toArray(new ActivityInfo[receivers.size()]);
+    
+        // try to invoke plugin's application
+        invokeApplication();
     }
 
     protected void tryToCopyNativeLib(File apk) throws Exception {
@@ -289,7 +281,8 @@ public final class LoadedPlugin {
         return mApplication;
     }
 
-    public void invokeApplication() {
+    public void invokeApplication() throws Exception {
+        final Exception[] temp = new Exception[1];
         // make sure application's callback is run on ui thread.
         RunUtil.runOnUiThread(new Runnable() {
             @Override
@@ -297,9 +290,17 @@ public final class LoadedPlugin {
                 if (mApplication != null) {
                     return;
                 }
-                mApplication = makeApplication(false, mPluginManager.getInstrumentation());
+                try {
+                    mApplication = makeApplication(false, mPluginManager.getInstrumentation());
+                } catch (Exception e) {
+                    temp[0] = e;
+                }
             }
         }, true);
+        
+        if (temp[0] != null) {
+            throw temp[0];
+        }
     }
 
     public String getPackageResourcePath() {
@@ -379,7 +380,7 @@ public final class LoadedPlugin {
         Reflector.QuietReflector.with(this.mResources).field("mThemeResId").set(resid);
     }
 
-    protected Application makeApplication(boolean forceDefaultAppClass, Instrumentation instrumentation) {
+    protected Application makeApplication(boolean forceDefaultAppClass, Instrumentation instrumentation) throws Exception {
         if (null != this.mApplication) {
             return this.mApplication;
         }
@@ -388,15 +389,12 @@ public final class LoadedPlugin {
         if (forceDefaultAppClass || null == appClass) {
             appClass = "android.app.Application";
         }
-
-        try {
-            this.mApplication = instrumentation.newApplication(this.mClassLoader, appClass, this.getPluginContext());
-            instrumentation.callApplicationOnCreate(this.mApplication);
-            return this.mApplication;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    
+        this.mApplication = instrumentation.newApplication(this.mClassLoader, appClass, this.getPluginContext());
+        // inject activityLifecycleCallbacks of the host application
+        mApplication.registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacksProxy());
+        instrumentation.callApplicationOnCreate(this.mApplication);
+        return this.mApplication;
     }
 
     public ResolveInfo resolveActivity(Intent intent, int flags) {

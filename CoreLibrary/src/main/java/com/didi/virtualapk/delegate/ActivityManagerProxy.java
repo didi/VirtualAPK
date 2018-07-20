@@ -33,11 +33,10 @@ import android.os.ServiceManager;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
-import com.didi.virtualapk.utils.PluginUtil;
+import com.didi.virtualapk.internal.utils.PluginUtil;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 /**
  * @author johnsonlee

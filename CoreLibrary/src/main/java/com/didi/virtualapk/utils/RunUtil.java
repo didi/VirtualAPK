@@ -52,7 +52,7 @@ public class RunUtil {
      * @param waitUtilDone if set true, the caller thread will wait until the specific runnable finished.
      */
     public static void runOnUiThread(Runnable runnable, boolean waitUtilDone) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
+        if (Thread.currentThread() == Looper.getMainLooper().getThread()) {
             runnable.run();
             return;
         }
@@ -121,11 +121,15 @@ public class RunUtil {
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == MESSAGE_RUN_ON_UITHREAD) {
-                Pair<Runnable, CountDownLatch> pair = (Pair<Runnable, CountDownLatch>)msg.obj;
-                Runnable runnable = pair.first;
-                runnable.run();
-                if (pair.second != null) {
-                    pair.second.countDown();
+                Pair<Runnable, CountDownLatch> pair = (Pair<Runnable, CountDownLatch>) msg.obj;
+                try {
+                    Runnable runnable = pair.first;
+                    runnable.run();
+    
+                } finally {
+                    if (pair.second != null) {
+                        pair.second.countDown();
+                    }
                 }
             }
         }
