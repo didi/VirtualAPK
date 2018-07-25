@@ -32,6 +32,7 @@ import android.content.pm.FeatureInfo;
 import android.content.pm.InstrumentationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
+import android.content.pm.PackageItemInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageParser;
 import android.content.pm.PermissionGroupInfo;
@@ -1299,6 +1300,13 @@ public final class LoadedPlugin {
         @TargetApi(24)
         public boolean hasSystemFeature(String s, int i) {
             return mHostPackageManager.hasSystemFeature(s);
+        }
+        
+        public Drawable loadItemIcon(PackageItemInfo itemInfo, ApplicationInfo appInfo) {
+            if (itemInfo == null) {
+                return null;
+            }
+            return itemInfo.loadIcon(this.mHostPackageManager);
         }
     }
 
