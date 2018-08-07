@@ -16,108 +16,76 @@
 
 package com.didi.virtualapk.internal;
 
-import android.content.ContentResolver;
+import android.annotation.TargetApi;
+import android.content.ContentResolverWrapper;
 import android.content.Context;
 import android.content.IContentProvider;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Keep;
 
 import com.didi.virtualapk.PluginManager;
 import com.didi.virtualapk.delegate.RemoteContentProvider;
 
-import java.lang.reflect.Method;
-
 /**
  * Created by renyugang on 16/12/7.
  */
 
-public class PluginContentResolver extends ContentResolver {
-    private ContentResolver mBase;
+public class PluginContentResolver extends ContentResolverWrapper {
     private PluginManager mPluginManager;
-    private static Method sAcquireProvider;
-    private static Method sAcquireExistingProvider;
-    private static Method sAcquireUnstableProvider;
-
-    static {
-        try {
-            sAcquireProvider = ContentResolver.class.getDeclaredMethod("acquireProvider",
-                    new Class[]{Context.class, String.class});
-            sAcquireProvider.setAccessible(true);
-            sAcquireExistingProvider = ContentResolver.class.getDeclaredMethod("acquireExistingProvider",
-                    new Class[]{Context.class, String.class});
-            sAcquireExistingProvider.setAccessible(true);
-            sAcquireUnstableProvider = ContentResolver.class.getDeclaredMethod("acquireUnstableProvider",
-                    new Class[]{Context.class, String.class});
-            sAcquireUnstableProvider.setAccessible(true);
-        } catch (Exception e) {
-            //ignored
-        }
-    }
 
     public PluginContentResolver(Context context) {
         super(context);
-        mBase = context.getContentResolver();
         mPluginManager = PluginManager.getInstance(context);
     }
-
+    
+    @Override
     protected IContentProvider acquireProvider(Context context, String auth) {
-        try {
-            if (mPluginManager.resolveContentProvider(auth, 0) != null) {
-                return mPluginManager.getIContentProvider();
-            }
-
-            return (IContentProvider) sAcquireProvider.invoke(mBase, context, auth);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (mPluginManager.resolveContentProvider(auth, 0) != null) {
+            return mPluginManager.getIContentProvider();
         }
-
-        return null;
+        return super.acquireProvider(context, auth);
     }
 
+    @Override
     protected IContentProvider acquireExistingProvider(Context context, String auth) {
-        try {
-            if (mPluginManager.resolveContentProvider(auth, 0) != null) {
-                return mPluginManager.getIContentProvider();
-            }
-
-            return (IContentProvider) sAcquireExistingProvider.invoke(mBase, context, auth);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (mPluginManager.resolveContentProvider(auth, 0) != null) {
+            return mPluginManager.getIContentProvider();
         }
-
-        return null;
+        return super.acquireExistingProvider(context, auth);
     }
-
+    
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    @Override
     protected IContentProvider acquireUnstableProvider(Context context, String auth) {
-        try {
-            if (mPluginManager.resolveContentProvider(auth, 0) != null) {
-                return mPluginManager.getIContentProvider();
-            }
-
-            return (IContentProvider) sAcquireUnstableProvider.invoke(mBase, context, auth);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (mPluginManager.resolveContentProvider(auth, 0) != null) {
+            return mPluginManager.getIContentProvider();
         }
-
-        return null;
+        return super.acquireUnstableProvider(context, auth);
     }
 
+    @Override
     public boolean releaseProvider(IContentProvider provider) {
         return true;
     }
-
+    
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    @Override
     public boolean releaseUnstableProvider(IContentProvider icp) {
         return true;
     }
-
+    
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    @Override
     public void unstableProviderDied(IContentProvider icp) {
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
+    @Override
     public void appNotRespondingViaProvider(IContentProvider icp) {
     }
 
-    /** @hide */
     protected int resolveUserIdFromAuthority(String auth) {
         return 0;
     }
@@ -126,7 +94,7 @@ public class PluginContentResolver extends ContentResolver {
     public static Uri wrapperUri(LoadedPlugin loadedPlugin, Uri pluginUri) {
         String pkg = loadedPlugin.getPackageName();
         String pluginUriString = Uri.encode(pluginUri.toString());
-        StringBuilder builder = new StringBuilder(PluginContentResolver.getUri(loadedPlugin.getHostContext()));
+        StringBuilder builder = new StringBuilder(RemoteContentProvider.getUri(loadedPlugin.getHostContext()));
         builder.append("/?plugin=" + loadedPlugin.getLocation());
         builder.append("&pkg=" + pkg);
         builder.append("&uri=" + pluginUriString);
@@ -136,12 +104,12 @@ public class PluginContentResolver extends ContentResolver {
 
     @Deprecated
     public static String getAuthority(Context context) {
-        return context.getPackageName() + ".VirtualAPK.Provider";
+        return RemoteContentProvider.getAuthority(context);
     }
 
     @Deprecated
     public static String getUri(Context context) {
-        return "content://" + getAuthority(context);
+        return RemoteContentProvider.getUri(context);
     }
 
     @Keep

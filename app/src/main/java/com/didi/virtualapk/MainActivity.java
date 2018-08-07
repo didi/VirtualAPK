@@ -14,14 +14,17 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.didi.virtualapk.internal.PluginContentResolver;
 import com.didi.virtualapk.internal.LoadedPlugin;
+import com.didi.virtualapk.internal.PluginContentResolver;
 
 import java.io.File;
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -105,14 +108,22 @@ public class MainActivity extends AppCompatActivity {
             bookUri = PluginContentResolver.wrapperUri(plugin, bookUri);
 
             Cursor bookCursor = getContentResolver().query(bookUri, new String[]{"_id", "name"}, null, null, null);
-            while (bookCursor.moveToNext()) {
-                int bookId = bookCursor.getInt(0);
-                String bookName = bookCursor.getString(1);
-                Log.d("ryg", "query book:" + bookId + ", " + bookName);
+            if (bookCursor != null) {
+                while (bookCursor.moveToNext()) {
+                    int bookId = bookCursor.getInt(0);
+                    String bookName = bookCursor.getString(1);
+                    Log.d("ryg", "query book:" + bookId + ", " + bookName);
+                }
+                bookCursor.close();
             }
-            bookCursor.close();
         } else if (v.getId() == R.id.about) {
             showAbout();
+        } else if (v.getId() == R.id.webview) {
+            LinearLayout linearLayout = (LinearLayout) v.getParent();
+            WebView webView = new WebView(this);
+            linearLayout.addView(webView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+            webView.setWebViewClient(new WebViewClient());
+            webView.loadUrl("http://github.com/didi/VirtualAPK");
         }
     }
 

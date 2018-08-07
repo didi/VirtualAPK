@@ -33,27 +33,23 @@ import android.os.ServiceManager;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
-import com.didi.virtualapk.utils.PluginUtil;
+import com.didi.virtualapk.internal.Constants;
+import com.didi.virtualapk.internal.utils.PluginUtil;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 /**
  * @author johnsonlee
  */
 public class ActivityManagerProxy implements InvocationHandler {
 
-    private static final String TAG = "IActivityManagerProxy";
+    private static final String TAG = Constants.TAG_PREFIX + "IActivityManagerProxy";
 
     public static final int INTENT_SENDER_BROADCAST = 1;
     public static final int INTENT_SENDER_ACTIVITY = 2;
     public static final int INTENT_SENDER_ACTIVITY_RESULT = 3;
     public static final int INTENT_SENDER_SERVICE = 4;
-
-    public static IActivityManager newInstance(PluginManager pluginManager, IActivityManager activityManager) {
-        return (IActivityManager) Proxy.newProxyInstance(activityManager.getClass().getClassLoader(), new Class[] { IActivityManager.class }, new ActivityManagerProxy(pluginManager, activityManager));
-    }
 
     private PluginManager mPluginManager;
     private IActivityManager mActivityManager;
@@ -87,25 +83,25 @@ public class ActivityManagerProxy implements InvocationHandler {
             try {
                 return bindService(proxy, method, args);
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         } else if ("unbindService".equals(method.getName())) {
             try {
                 return unbindService(proxy, method, args);
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         } else if ("getIntentSender".equals(method.getName())) {
             try {
                 getIntentSender(method, args);
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         } else if ("overridePendingTransition".equals(method.getName())){
             try {
                 overridePendingTransition(method, args);
             } catch (Exception e){
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         }
 
@@ -135,7 +131,7 @@ public class ActivityManagerProxy implements InvocationHandler {
 
     }
 
-    private Object startService(Object proxy, Method method, Object[] args) throws Throwable {
+    protected Object startService(Object proxy, Method method, Object[] args) throws Throwable {
         IApplicationThread appThread = (IApplicationThread) args[0];
         Intent target = (Intent) args[1];
         ResolveInfo resolveInfo = this.mPluginManager.resolveService(target, 0);
@@ -147,7 +143,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         return startDelegateServiceForTarget(target, resolveInfo.serviceInfo, null, RemoteService.EXTRA_COMMAND_START_SERVICE);
     }
 
-    private Object stopService(Object proxy, Method method, Object[] args) throws Throwable {
+    protected Object stopService(Object proxy, Method method, Object[] args) throws Throwable {
         Intent target = (Intent) args[1];
         ResolveInfo resolveInfo = this.mPluginManager.resolveService(target, 0);
         if (null == resolveInfo || null == resolveInfo.serviceInfo) {
@@ -159,7 +155,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         return 1;
     }
 
-    private Object stopServiceToken(Object proxy, Method method, Object[] args) throws Throwable {
+    protected Object stopServiceToken(Object proxy, Method method, Object[] args) throws Throwable {
         ComponentName component = (ComponentName) args[0];
         Intent target = new Intent().setComponent(component);
         ResolveInfo resolveInfo = this.mPluginManager.resolveService(target, 0);
@@ -172,7 +168,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         return true;
     }
 
-    private Object bindService(Object proxy, Method method, Object[] args) throws Throwable {
+    protected Object bindService(Object proxy, Method method, Object[] args) throws Throwable {
         Intent target = (Intent) args[2];
         ResolveInfo resolveInfo = this.mPluginManager.resolveService(target, 0);
         if (null == resolveInfo || null == resolveInfo.serviceInfo) {
@@ -187,7 +183,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         return 1;
     }
 
-    private Object unbindService(Object proxy, Method method, Object[] args) throws Throwable {
+    protected Object unbindService(Object proxy, Method method, Object[] args) throws Throwable {
         IBinder iServiceConnection = (IBinder)args[0];
         Intent target = mPluginManager.getComponentsHandler().forgetIServiceConnection(iServiceConnection);
         if (target == null) {
@@ -200,12 +196,12 @@ public class ActivityManagerProxy implements InvocationHandler {
         return true;
     }
 
-    private ComponentName startDelegateServiceForTarget(Intent target, ServiceInfo serviceInfo, Bundle extras, int command) {
+    protected ComponentName startDelegateServiceForTarget(Intent target, ServiceInfo serviceInfo, Bundle extras, int command) {
         Intent wrapperIntent = wrapperTargetIntent(target, serviceInfo, extras, command);
         return mPluginManager.getHostContext().startService(wrapperIntent);
     }
 
-    private Intent wrapperTargetIntent(Intent target, ServiceInfo serviceInfo, Bundle extras, int command) {
+    protected Intent wrapperTargetIntent(Intent target, ServiceInfo serviceInfo, Bundle extras, int command) {
         // fill in service with ComponentName
         target.setComponent(new ComponentName(serviceInfo.packageName, serviceInfo.name));
         String pluginLocation = mPluginManager.getLoadedPlugin(target.getComponent()).getLocation();
@@ -225,7 +221,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         return intent;
     }
 
-    private void getIntentSender(Method method, Object[] args) {
+    protected void getIntentSender(Method method, Object[] args) {
         String hostPackageName = mPluginManager.getHostContext().getPackageName();
         args[1] = hostPackageName;
 
@@ -246,7 +242,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         }
     }
 
-    private void overridePendingTransition(Method method, Object[] args) {
+    protected void overridePendingTransition(Method method, Object[] args) {
         String hostPackageName = mPluginManager.getHostContext().getPackageName();
         args[1] = hostPackageName;
     }

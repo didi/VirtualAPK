@@ -23,12 +23,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.util.Log;
 import android.util.Pair;
+
+import com.didi.virtualapk.internal.Constants;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Created by renyugang on 16/11/10.
@@ -53,7 +55,7 @@ public class RunUtil {
      * @param waitUtilDone if set true, the caller thread will wait until the specific runnable finished.
      */
     public static void runOnUiThread(Runnable runnable, boolean waitUtilDone) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
+        if (Thread.currentThread() == Looper.getMainLooper().getThread()) {
             runnable.run();
             return;
         }
@@ -68,7 +70,7 @@ public class RunUtil {
             try {
                 countDownLatch.await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.w(Constants.TAG, e);
             }
         }
     }
@@ -77,17 +79,22 @@ public class RunUtil {
         return AsyncTask.THREAD_POOL_EXECUTOR;
     }
 
-    public static String getProcessNameByPid(Context context, int pid) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningAppProcessInfo> appProcessList = manager.getRunningAppProcesses();
-        if (appProcessList != null) {
-            for (ActivityManager.RunningAppProcessInfo appProcessInfo : appProcessList) {
-                if (pid == appProcessInfo.pid) {
-                    return appProcessInfo.processName;
+    private static String getProcessNameByPid(Context context, int pid) {
+        try {
+            ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> appProcessList = manager.getRunningAppProcesses();
+            if (appProcessList != null) {
+                for (ActivityManager.RunningAppProcessInfo appProcessInfo : appProcessList) {
+                    if (pid == appProcessInfo.pid) {
+                        return appProcessInfo.processName;
+                    }
                 }
             }
+    
+        } catch (Throwable e) {
+            Log.w(Constants.TAG, e);
         }
-
+        
         return null;
     }
 
@@ -117,11 +124,15 @@ public class RunUtil {
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == MESSAGE_RUN_ON_UITHREAD) {
-                Pair<Runnable, CountDownLatch> pair = (Pair<Runnable, CountDownLatch>)msg.obj;
-                Runnable runnable = pair.first;
-                runnable.run();
-                if (pair.second != null) {
-                    pair.second.countDown();
+                Pair<Runnable, CountDownLatch> pair = (Pair<Runnable, CountDownLatch>) msg.obj;
+                try {
+                    Runnable runnable = pair.first;
+                    runnable.run();
+    
+                } finally {
+                    if (pair.second != null) {
+                        pair.second.countDown();
+                    }
                 }
             }
         }

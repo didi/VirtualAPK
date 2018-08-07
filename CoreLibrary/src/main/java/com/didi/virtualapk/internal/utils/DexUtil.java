@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.didi.virtualapk.utils;
+package com.didi.virtualapk.internal.utils;
 
+import android.app.ActivityThread;
 import android.content.Context;
 import android.os.Build;
 
-import com.didi.virtualapk.Systems;
 import com.didi.virtualapk.internal.Constants;
+import com.didi.virtualapk.utils.Reflector;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -28,67 +29,56 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import dalvik.system.DexClassLoader;
-import dalvik.system.PathClassLoader;
 
 public class DexUtil {
     private static boolean sHasInsertedNativeLibrary = false;
 
-    public static void insertDex(DexClassLoader dexClassLoader) throws Exception {
-        Object baseDexElements = getDexElements(getPathList(getPathClassLoader()));
+    public static void insertDex(DexClassLoader dexClassLoader, ClassLoader baseClassLoader) throws Exception {
+        Object baseDexElements = getDexElements(getPathList(baseClassLoader));
         Object newDexElements = getDexElements(getPathList(dexClassLoader));
         Object allDexElements = combineArray(baseDexElements, newDexElements);
-        Object pathList = getPathList(getPathClassLoader());
-        ReflectUtil.setField(pathList.getClass(), pathList, "dexElements", allDexElements);
+        Object pathList = getPathList(baseClassLoader);
+        Reflector.with(pathList).field("dexElements").set(allDexElements);
 
-        insertNativeLibrary(dexClassLoader);
-
-    }
-
-    private static PathClassLoader getPathClassLoader() {
-        PathClassLoader pathClassLoader = (PathClassLoader) DexUtil.class.getClassLoader();
-        return pathClassLoader;
+        insertNativeLibrary(dexClassLoader, baseClassLoader);
     }
 
     private static Object getDexElements(Object pathList) throws Exception {
-        return ReflectUtil.getField(pathList.getClass(), pathList, "dexElements");
+        return Reflector.with(pathList).field("dexElements").get();
     }
 
-    private static Object getPathList(Object baseDexClassLoader) throws Exception {
-        return ReflectUtil.getField(Class.forName("dalvik.system.BaseDexClassLoader"), baseDexClassLoader, "pathList");
+    private static Object getPathList(ClassLoader baseDexClassLoader) throws Exception {
+        return Reflector.with(baseDexClassLoader).field("pathList").get();
     }
 
     private static Object combineArray(Object firstArray, Object secondArray) {
         Class<?> localClass = firstArray.getClass().getComponentType();
         int firstArrayLength = Array.getLength(firstArray);
-        int allLength = firstArrayLength + Array.getLength(secondArray);
-        Object result = Array.newInstance(localClass, allLength);
-        for (int k = 0; k < allLength; ++k) {
-            if (k < firstArrayLength) {
-                Array.set(result, k, Array.get(firstArray, k));
-            } else {
-                Array.set(result, k, Array.get(secondArray, k - firstArrayLength));
-            }
-        }
+        int secondArrayLength = Array.getLength(secondArray);
+        Object result = Array.newInstance(localClass, firstArrayLength + secondArrayLength);
+        System.arraycopy(firstArray, 0, result, 0, firstArrayLength);
+        System.arraycopy(secondArray, 0, result, firstArrayLength, secondArrayLength);
         return result;
     }
 
-    private static synchronized void insertNativeLibrary(DexClassLoader dexClassLoader) throws Exception {
+    private static synchronized void insertNativeLibrary(DexClassLoader dexClassLoader, ClassLoader baseClassLoader) throws Exception {
         if (sHasInsertedNativeLibrary) {
             return;
         }
         sHasInsertedNativeLibrary = true;
 
-        Object basePathList = getPathList(getPathClassLoader());
+        Context context = ActivityThread.currentApplication();
+        Object basePathList = getPathList(baseClassLoader);
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
-            List<File> nativeLibraryDirectories = (List<File>) ReflectUtil.getField(basePathList.getClass(),
-                    basePathList, "nativeLibraryDirectories");
-            nativeLibraryDirectories.add(Systems.getContext().getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE));
+            Reflector reflector = Reflector.with(basePathList);
+            List<File> nativeLibraryDirectories = reflector.field("nativeLibraryDirectories").get();
+            nativeLibraryDirectories.add(context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE));
 
-            Object baseNativeLibraryPathElements = ReflectUtil.getField(basePathList.getClass(), basePathList, "nativeLibraryPathElements");
+            Object baseNativeLibraryPathElements = reflector.field("nativeLibraryPathElements").get();
             final int baseArrayLength = Array.getLength(baseNativeLibraryPathElements);
 
             Object newPathList = getPathList(dexClassLoader);
-            Object newNativeLibraryPathElements = ReflectUtil.getField(newPathList.getClass(), newPathList, "nativeLibraryPathElements");
+            Object newNativeLibraryPathElements = reflector.get(newPathList);
             Class<?> elementClass = newNativeLibraryPathElements.getClass().getComponentType();
             Object allNativeLibraryPathElements = Array.newInstance(elementClass, baseArrayLength + 1);
             System.arraycopy(baseNativeLibraryPathElements, 0, allNativeLibraryPathElements, 0, baseArrayLength);
@@ -110,15 +100,15 @@ public class DexUtil {
                 }
             }
 
-            ReflectUtil.setField(basePathList.getClass(), basePathList, "nativeLibraryPathElements", allNativeLibraryPathElements);
+            reflector.set(allNativeLibraryPathElements);
         } else {
-            File[] nativeLibraryDirectories = (File[]) ReflectUtil.getFieldNoException(basePathList.getClass(),
-                    basePathList, "nativeLibraryDirectories");
+            Reflector reflector = Reflector.with(basePathList).field("nativeLibraryDirectories");
+            File[] nativeLibraryDirectories = reflector.get();
             final int N = nativeLibraryDirectories.length;
             File[] newNativeLibraryDirectories = new File[N + 1];
             System.arraycopy(nativeLibraryDirectories, 0, newNativeLibraryDirectories, 0, N);
-            newNativeLibraryDirectories[N] = Systems.getContext().getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
-            ReflectUtil.setField(basePathList.getClass(), basePathList, "nativeLibraryDirectories", newNativeLibraryDirectories);
+            newNativeLibraryDirectories[N] = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
+            reflector.set(newNativeLibraryDirectories);
         }
     }
 

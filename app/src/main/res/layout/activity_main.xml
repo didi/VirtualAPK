@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
@@ -10,30 +11,32 @@
     tools:context="com.didi.virtualapk.MainActivity">
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Hello World!"
         android:id="@+id/textView" />
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/open_plugin"
         android:id="@+id/button"
         android:onClick="onButtonClick"
-        android:layout_below="@+id/textView"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="42dp" />
+        android:layout_marginTop="10dp" />
 
     <Button
         android:text="@string/about"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/button"
         android:onClick="onButtonClick"
-        android:layout_alignParentLeft="true"
-        android:layout_marginTop="58dp"
-        android:id="@+id/about"
-        android:layout_alignRight="@+id/button" />
-</RelativeLayout>
+        android:layout_marginTop="10dp"
+        android:id="@+id/about" />
+
+    <Button
+        android:text="@string/webview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onButtonClick"
+        android:layout_marginTop="10dp"
+        android:id="@+id/webview" />
+</LinearLayout>

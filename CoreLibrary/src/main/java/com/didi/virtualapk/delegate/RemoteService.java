@@ -19,8 +19,10 @@ package com.didi.virtualapk.delegate;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
 
 import java.io.File;
@@ -29,6 +31,8 @@ import java.io.File;
  * @author johnsonlee
  */
 public class RemoteService extends LocalService {
+    
+    private static final String TAG = Constants.TAG_PREFIX + "RemoteService";
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -50,7 +54,7 @@ public class RemoteService extends LocalService {
                 try {
                     PluginManager.getInstance(this).loadPlugin(new File(pluginLocation));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                 }
             }
         }

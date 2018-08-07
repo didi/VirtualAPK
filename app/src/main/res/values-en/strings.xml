@@ -2,5 +2,6 @@
     <string name="app_name">VirtualAPK-EN</string>
     <string name="open_plugin">open plugin</string>
     <string name="about">about</string>
+    <string name="webview">Append WebView</string>
     <string name="about_detail">VirtualAPK is a plugin framework powered by DiDi company for Android，see the source code : https://github.com/didi/VirtualAPK</string>
 </resources>

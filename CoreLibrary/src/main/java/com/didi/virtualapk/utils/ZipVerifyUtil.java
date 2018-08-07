@@ -18,6 +18,9 @@ package com.didi.virtualapk.utils;
 
 import android.content.Context;
 import android.util.Base64;
+import android.util.Log;
+
+import com.didi.virtualapk.internal.Constants;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,14 +49,18 @@ import java.util.zip.ZipFile;
 public class ZipVerifyUtil {
 
     public static boolean verifyZip(Context context, String zipPath) {
+        return verifyZip(context, zipPath, "test.cer");
+    }
+    
+    public static boolean verifyZip(Context context, String zipPath, String cerName) {
         try {
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            InputStream in = context.getAssets().open("test.cer");
+            InputStream in = context.getAssets().open(cerName);
             Certificate certificate = certificateFactory.generateCertificate(in);
             in.close();
             return verifyZip(zipPath, certificate);
         } catch (IOException | CertificateException e) {
-            e.printStackTrace();
+            Log.w(Constants.TAG, e);
             return false;
         }
     }
@@ -65,7 +72,7 @@ public class ZipVerifyUtil {
             remoteCertificate.verify(certificate.getPublicKey());
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(Constants.TAG, e);
             return false;
         }
     }

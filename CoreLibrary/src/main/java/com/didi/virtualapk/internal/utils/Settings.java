@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.didi.virtualapk.utils;
+package com.didi.virtualapk.internal.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;

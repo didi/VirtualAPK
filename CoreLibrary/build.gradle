@@ -1,3 +1,7 @@
+import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.api.LibraryVariant
+import com.google.common.base.Joiner
+
 apply plugin: 'com.android.library'
 
 android {
@@ -29,12 +33,31 @@ repositories {
     jcenter()
 }
 
+final String projectAndroidStub = ':AndroidStub'
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    provided project(':AndroidStub')
+    provided project(projectAndroidStub)
 
     testCompile 'junit:junit:4.12'
+}
+
+// Using Stub classes first when compiling.
+afterEvaluate {
+    project.android.libraryVariants.each { LibraryVariant variant ->
+        variant.javaCompile.doFirst { JavaCompile javaCompile ->
+            String projectAndroidStubPath = project.project(projectAndroidStub).projectDir.canonicalPath
+//            println "projectAndroidStubPath: ${projectAndroidStubPath}"
+            File stubPath = javaCompile.classpath.find {
+                it.canonicalPath.startsWith(projectAndroidStubPath)
+            }
+            if (stubPath == null) {
+                throw new RuntimeException("reset bootclasspath error.")
+            }
+            javaCompile.options.setBootClasspath(Joiner.on(File.pathSeparator).join(stubPath, javaCompile.options.bootClasspath))
+        }
+    }
 }
 
 apply from: 'upload.gradle'

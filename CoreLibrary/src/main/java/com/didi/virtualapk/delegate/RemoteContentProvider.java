@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.utils.RunUtil;
 
@@ -44,7 +45,7 @@ import java.util.Map;
  */
 
 public class RemoteContentProvider extends ContentProvider {
-    private static final String TAG = "RemoteContentProvider";
+    private static final String TAG = Constants.TAG_PREFIX + "RemoteContentProvider";
 
     public static final String KEY_PKG = "pkg";
     public static final String KEY_PLUGIN = "plugin";
@@ -76,7 +77,7 @@ public class RemoteContentProvider extends ContentProvider {
                 try {
                     pluginManager.loadPlugin(new File(uri.getQueryParameter(KEY_PLUGIN)));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                 }
             }
 
@@ -91,7 +92,7 @@ public class RemoteContentProvider extends ContentProvider {
                             contentProvider.attachInfo(loadedPlugin.getPluginContext(), providerInfo);
                             sCachedProviders.put(auth, contentProvider);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Log.w(TAG, e);
                         }
                     }
                 }, true);
@@ -209,4 +210,12 @@ public class RemoteContentProvider extends ContentProvider {
         return null;
     }
 
+    public static String getAuthority(Context context) {
+        return context.getPackageName() + ".VirtualAPK.Provider";
+    }
+    
+    public static String getUri(Context context) {
+        return "content://" + getAuthority(context);
+    }
+    
 }

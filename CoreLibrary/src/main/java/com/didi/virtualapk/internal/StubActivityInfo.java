@@ -58,7 +58,7 @@ class StubActivityInfo {
         boolean windowIsTranslucent = array.getBoolean(0, false);
         array.recycle();
         if (Constants.DEBUG) {
-            Log.d("StubActivityInfo", "getStubActivity, is transparent theme ? " + windowIsTranslucent);
+            Log.d(Constants.TAG_PREFIX + "StubActivityInfo", "getStubActivity, is transparent theme ? " + windowIsTranslucent);
         }
         stubActivity = String.format(STUB_ACTIVITY_STANDARD, corePackage, usedStandardStubActivity);
         switch (launchMode) {

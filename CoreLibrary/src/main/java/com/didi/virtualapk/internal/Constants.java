@@ -30,5 +30,8 @@ public class Constants {
     public static final boolean COMBINE_RESOURCES = true;
     public static final boolean COMBINE_CLASSLOADER = true;
     public static final boolean DEBUG = true;
+    
+    public static final String TAG = "VA";
+    public static final String TAG_PREFIX = TAG + ".";
 
 }

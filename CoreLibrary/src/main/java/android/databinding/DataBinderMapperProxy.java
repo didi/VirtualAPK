@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
 
 import java.util.LinkedList;
@@ -14,7 +15,7 @@ import java.util.LinkedList;
  * Created by qiaopu on 2018/4/11.
  */
 public class DataBinderMapperProxy extends DataBinderMapper implements PluginManager.Callback {
-    public static final String TAG = "DataBinderMapperProxy";
+    public static final String TAG = Constants.TAG_PREFIX + "DataBinderMapperProxy";
     
     private final LinkedList<DataBinderMapper> mMappers;
     private DataBinderMapper[] mCache;

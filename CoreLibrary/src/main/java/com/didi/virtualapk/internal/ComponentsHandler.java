@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ComponentsHandler {
 
-    public static final String TAG = "PluginManager";
+    public static final String TAG = Constants.TAG_PREFIX + "PluginManager";
 
     private Context mContext;
     private PluginManager mPluginManager;
