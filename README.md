@@ -1,6 +1,6 @@
 # <img src="imgs/va-logo.png" width="200px" align="center" alt="VirtualAPK"/>
 [![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/didi/VirtualAPK/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-0.9.6-red.svg)](https://github.com/didi/VirtualAPK/releases)
+[![Release Version](https://img.shields.io/badge/release-0.9.7-dev-red.svg)](https://github.com/didi/VirtualAPK/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/didi/VirtualAPK/pulls)
 
 VirtualAPK is a powerful yet lightweight plugin framework for Android. It can dynamically load and run an APK file (we call it `LoadedPlugin`) seamlessly as an installed application. Developers can use any Class, Resources, Activity, Service, Receiver and Provider in `LoadedPlugin` as if they are registered in app's manifest file.
@@ -41,7 +41,7 @@ apply plugin: 'com.didi.virtualapk.host'
 Compile VirtualAPK in application module of `build.gradle`.
 
 ``` java
-compile 'com.didi.virtualapk:core:0.9.6'
+compile 'com.didi.virtualapk:core:0.9.7-dev'
 ```
 
 Initialize `PluginManager` in `YourApplication::attachBaseContext()`.
