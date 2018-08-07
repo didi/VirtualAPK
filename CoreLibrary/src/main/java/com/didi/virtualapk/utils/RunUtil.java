@@ -23,7 +23,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.util.Log;
 import android.util.Pair;
+
+import com.didi.virtualapk.internal.Constants;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -67,7 +70,7 @@ public class RunUtil {
             try {
                 countDownLatch.await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.w(Constants.TAG, e);
             }
         }
     }
@@ -89,7 +92,7 @@ public class RunUtil {
             }
     
         } catch (Throwable e) {
-            e.printStackTrace();
+            Log.w(Constants.TAG, e);
         }
         
         return null;

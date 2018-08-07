@@ -47,7 +47,7 @@ import java.util.Objects;
  */
 class ResourcesManager {
     
-    public static final String TAG = "LoadedPlugin";
+    public static final String TAG = Constants.TAG_PREFIX + "LoadedPlugin";
 
     private static Configuration mDefaultConfiguration;
     
@@ -129,7 +129,7 @@ class ResourcesManager {
             Object key = map.keySet().iterator().next();
             map.put(key, new WeakReference<>(resources));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(TAG, e);
         }
     }
     

@@ -40,6 +40,7 @@ import com.didi.virtualapk.delegate.ActivityManagerProxy;
 import com.didi.virtualapk.delegate.IContentProviderProxy;
 import com.didi.virtualapk.delegate.RemoteContentProvider;
 import com.didi.virtualapk.internal.ComponentsHandler;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.internal.VAInstrumentation;
 import com.didi.virtualapk.internal.utils.PluginUtil;
@@ -62,7 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PluginManager {
 
-    public static final String TAG = "PluginManager";
+    public static final String TAG = Constants.TAG_PREFIX + "PluginManager";
 
     private static volatile PluginManager sInstance = null;
 
@@ -184,8 +185,9 @@ public class PluginManager {
                 Callback callback = Reflector.on("android.databinding.DataBinderMapperProxy").constructor().newInstance();
                 reflector.set(callback);
                 addCallback(callback);
+                Log.d(TAG, "hookDataBindingUtil succeed : " + callback);
             } catch (Reflector.ReflectedException e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         }
     }
@@ -220,9 +222,10 @@ public class PluginManager {
 
             if (defaultSingleton.get() == activityManagerProxy) {
                 this.mActivityManager = activityManagerProxy;
+                Log.d(TAG, "hookSystemServices succeed : " + mActivityManager);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(TAG, e);
         }
     }
     
@@ -241,8 +244,9 @@ public class PluginManager {
             Handler mainHandler = Reflector.with(activityThread).method("getHandler").call();
             Reflector.with(mainHandler).field("mCallback").set(instrumentation);
             this.mInstrumentation = instrumentation;
+            Log.d(TAG, "hookInstrumentationAndHandler succeed : " + mInstrumentation);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(TAG, e);
         }
     }
 
@@ -282,7 +286,7 @@ public class PluginManager {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(TAG, e);
         }
     }
 

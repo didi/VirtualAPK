@@ -51,7 +51,9 @@ import java.util.zip.ZipFile;
  * Created by renyugang on 16/8/15.
  */
 public class PluginUtil {
-
+    
+    public static final String TAG = Constants.TAG_PREFIX + "NativeLib";
+    
     public static ComponentName getComponent(Intent intent) {
         if (intent == null) {
             return null;
@@ -152,7 +154,7 @@ public class PluginUtil {
                 reflector.field("mResources").set(resources);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(Constants.TAG, e);
         }
     }
 
@@ -206,12 +208,12 @@ public class PluginUtil {
     
         } finally {
             zipfile.close();
-            Log.d("NativeLib", "Done! +" + (System.currentTimeMillis() - startTime) + "ms");
+            Log.d(TAG, "Done! +" + (System.currentTimeMillis() - startTime) + "ms");
         }
     }
     
     private static boolean findAndCopyNativeLib(ZipFile zipfile, Context context, String cpuArch, PackageInfo packageInfo, File nativeLibDir) throws Exception {
-        Log.d("NativeLib", "Try to copy plugin's cup arch: " + cpuArch);
+        Log.d(TAG, "Try to copy plugin's cup arch: " + cpuArch);
         boolean findLib = false;
         boolean findSo = false;
         byte buffer[] = null;
@@ -239,29 +241,29 @@ public class PluginUtil {
     
             if (buffer == null) {
                 findSo = true;
-                Log.d("NativeLib", "Found plugin's cup arch dir: " + cpuArch);
+                Log.d(TAG, "Found plugin's cup arch dir: " + cpuArch);
                 buffer = new byte[8192];
             }
             
             String libName = entryName.substring(entryName.lastIndexOf('/') + 1);
-            Log.d("NativeLib", "verify so " + libName);
+            Log.d(TAG, "verify so " + libName);
             File libFile = new File(nativeLibDir, libName);
             String key = packageInfo.packageName + "_" + libName;
             if (libFile.exists()) {
                 int VersionCode = Settings.getSoVersion(context, key);
                 if (VersionCode == packageInfo.versionCode) {
-                    Log.d("NativeLib", "skip existing so : " + entry.getName());
+                    Log.d(TAG, "skip existing so : " + entry.getName());
                     continue;
                 }
             }
             FileOutputStream fos = new FileOutputStream(libFile);
-            Log.d("NativeLib", "copy so " + entry.getName() + " of " + cpuArch);
+            Log.d(TAG, "copy so " + entry.getName() + " of " + cpuArch);
             copySo(buffer, zipfile.getInputStream(entry), fos);
             Settings.setSoVersion(context, key, packageInfo.versionCode);
         }
         
         if (!findLib) {
-            Log.d("NativeLib", "Fast skip all!");
+            Log.d(TAG, "Fast skip all!");
             return true;
         }
         

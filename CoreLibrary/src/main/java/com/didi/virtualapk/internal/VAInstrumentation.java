@@ -48,7 +48,7 @@ import java.util.List;
  * Created by renyugang on 16/8/10.
  */
 public class VAInstrumentation extends Instrumentation implements Handler.Callback {
-    public static final String TAG = "VAInstrumentation";
+    public static final String TAG = Constants.TAG_PREFIX + "VAInstrumentation";
     public static final int LAUNCH_ACTIVITY         = 100;
 
     protected Instrumentation mBase;
@@ -174,7 +174,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                     activity.setRequestedOrientation(activityInfo.screenOrientation);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         }
     }
@@ -198,7 +198,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         }
 

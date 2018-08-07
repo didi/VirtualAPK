@@ -18,6 +18,9 @@ package com.didi.virtualapk.utils;
 
 import android.content.Context;
 import android.util.Base64;
+import android.util.Log;
+
+import com.didi.virtualapk.internal.Constants;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,7 +60,7 @@ public class ZipVerifyUtil {
             in.close();
             return verifyZip(zipPath, certificate);
         } catch (IOException | CertificateException e) {
-            e.printStackTrace();
+            Log.w(Constants.TAG, e);
             return false;
         }
     }
@@ -69,7 +72,7 @@ public class ZipVerifyUtil {
             remoteCertificate.verify(certificate.getPublicKey());
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(Constants.TAG, e);
             return false;
         }
     }

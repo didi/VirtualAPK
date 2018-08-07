@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.internal.PluginContentResolver;
 
@@ -38,7 +39,7 @@ import java.util.Arrays;
  */
 
 public class IContentProviderProxy implements InvocationHandler {
-    private static final String TAG = "IContentProviderProxy";
+    private static final String TAG = Constants.TAG_PREFIX + "IContentProviderProxy";
 
     private IContentProvider mBase;
     private Context mContext;

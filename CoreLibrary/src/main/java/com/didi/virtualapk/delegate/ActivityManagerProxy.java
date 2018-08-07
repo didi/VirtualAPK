@@ -33,6 +33,7 @@ import android.os.ServiceManager;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.utils.PluginUtil;
 
 import java.lang.reflect.InvocationHandler;
@@ -43,7 +44,7 @@ import java.lang.reflect.Method;
  */
 public class ActivityManagerProxy implements InvocationHandler {
 
-    private static final String TAG = "IActivityManagerProxy";
+    private static final String TAG = Constants.TAG_PREFIX + "IActivityManagerProxy";
 
     public static final int INTENT_SENDER_BROADCAST = 1;
     public static final int INTENT_SENDER_ACTIVITY = 2;
@@ -82,25 +83,25 @@ public class ActivityManagerProxy implements InvocationHandler {
             try {
                 return bindService(proxy, method, args);
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         } else if ("unbindService".equals(method.getName())) {
             try {
                 return unbindService(proxy, method, args);
             } catch (Throwable e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         } else if ("getIntentSender".equals(method.getName())) {
             try {
                 getIntentSender(method, args);
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         } else if ("overridePendingTransition".equals(method.getName())){
             try {
                 overridePendingTransition(method, args);
             } catch (Exception e){
-                e.printStackTrace();
+                Log.w(TAG, e);
             }
         }
 

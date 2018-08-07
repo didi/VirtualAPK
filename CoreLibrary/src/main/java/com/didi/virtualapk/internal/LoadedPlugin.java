@@ -32,6 +32,7 @@ import android.content.pm.FeatureInfo;
 import android.content.pm.InstrumentationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
+import android.content.pm.PackageItemInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageParser;
 import android.content.pm.PermissionGroupInfo;
@@ -74,7 +75,7 @@ import dalvik.system.DexClassLoader;
  */
 public class LoadedPlugin {
 
-    public static final String TAG = "LoadedPlugin";
+    public static final String TAG = Constants.TAG_PREFIX + "LoadedPlugin";
 
     protected File getDir(Context context, String name) {
         return context.getDir(name, Context.MODE_PRIVATE);

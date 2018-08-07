@@ -31,6 +31,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
+import com.didi.virtualapk.internal.Constants;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.internal.utils.PluginUtil;
 import com.didi.virtualapk.utils.Reflector;
@@ -41,7 +42,7 @@ import java.lang.reflect.Method;
  * @author johnsonlee
  */
 public class LocalService extends Service {
-    private static final String TAG = "LocalService";
+    private static final String TAG = Constants.TAG_PREFIX + "LocalService";
 
     /**
      * The target service, usually it's a plugin service intent
@@ -133,7 +134,7 @@ public class LocalService extends Service {
                         service.onCreate();
                         this.mPluginManager.getComponentsHandler().rememberService(component, service);
                     } catch (Throwable t) {
-                        t.printStackTrace();
+                        Log.w(TAG, t);
                     }
                 }
                 try {
@@ -146,7 +147,7 @@ public class LocalService extends Service {
                         Reflector.QuietReflector.with(iServiceConnection).method("connected", ComponentName.class, IBinder.class).call(component, binder);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.w(TAG, e);
                 }
                 break;
             }
