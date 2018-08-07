@@ -26,6 +26,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -116,10 +117,15 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
     
             if (plugin == null) {
                 // Not found then goto stub activity.
-                Context context = this.mPluginManager.getHostContext();
-                Boolean debugMode = Reflector.QuietReflector.on(context.getPackageName() + ".BuildConfig").field("DEBUG").get();
-                
-                if (debugMode != null && debugMode) {
+                boolean debuggable = false;
+                try {
+                    Context context = this.mPluginManager.getHostContext();
+                    debuggable = (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+                } catch (Throwable ex) {
+        
+                }
+    
+                if (debuggable) {
                     throw new ActivityNotFoundException("error intent: " + intent.toURI());
                 }
                 
