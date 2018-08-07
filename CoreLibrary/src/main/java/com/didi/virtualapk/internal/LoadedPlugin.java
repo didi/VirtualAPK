@@ -87,7 +87,7 @@ public class LoadedPlugin {
         DexClassLoader loader = new DexClassLoader(apk.getAbsolutePath(), dexOutputPath, libsDir.getAbsolutePath(), parent);
 
         if (Constants.COMBINE_CLASSLOADER) {
-            DexUtil.insertDex(loader, parent);
+            DexUtil.insertDex(loader, parent, libsDir);
         }
 
         return loader;
@@ -176,7 +176,8 @@ public class LoadedPlugin {
         this.mPackageInfo.permissions = new PermissionInfo[0];
         this.mPackageManager = createPluginPackageManager();
         this.mPluginContext = createPluginContext(null);
-        this.mNativeLibDir = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
+        this.mNativeLibDir = getDir(context, Constants.NATIVE_DIR);
+        this.mPackage.applicationInfo.nativeLibraryDir = this.mNativeLibDir.getAbsolutePath();
         this.mResources = createResources(context, getPackageName(), apk);
         this.mClassLoader = createClassLoader(context, apk, this.mNativeLibDir, context.getClassLoader());
 
@@ -193,6 +194,7 @@ public class LoadedPlugin {
         // Cache activities
         Map<ComponentName, ActivityInfo> activityInfos = new HashMap<ComponentName, ActivityInfo>();
         for (PackageParser.Activity activity : this.mPackage.activities) {
+            activity.info.metaData = activity.metaData;
             activityInfos.put(activity.getComponentName(), activity.info);
         }
         this.mActivityInfos = Collections.unmodifiableMap(activityInfos);

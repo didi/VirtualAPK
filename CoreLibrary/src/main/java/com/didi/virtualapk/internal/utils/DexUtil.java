@@ -33,14 +33,14 @@ import dalvik.system.DexClassLoader;
 public class DexUtil {
     private static boolean sHasInsertedNativeLibrary = false;
 
-    public static void insertDex(DexClassLoader dexClassLoader, ClassLoader baseClassLoader) throws Exception {
+    public static void insertDex(DexClassLoader dexClassLoader, ClassLoader baseClassLoader, File nativeLibsDir) throws Exception {
         Object baseDexElements = getDexElements(getPathList(baseClassLoader));
         Object newDexElements = getDexElements(getPathList(dexClassLoader));
         Object allDexElements = combineArray(baseDexElements, newDexElements);
         Object pathList = getPathList(baseClassLoader);
         Reflector.with(pathList).field("dexElements").set(allDexElements);
 
-        insertNativeLibrary(dexClassLoader, baseClassLoader);
+        insertNativeLibrary(dexClassLoader, baseClassLoader, nativeLibsDir);
     }
 
     private static Object getDexElements(Object pathList) throws Exception {
@@ -61,7 +61,7 @@ public class DexUtil {
         return result;
     }
 
-    private static synchronized void insertNativeLibrary(DexClassLoader dexClassLoader, ClassLoader baseClassLoader) throws Exception {
+    private static synchronized void insertNativeLibrary(DexClassLoader dexClassLoader, ClassLoader baseClassLoader, File nativeLibsDir) throws Exception {
         if (sHasInsertedNativeLibrary) {
             return;
         }
@@ -72,7 +72,7 @@ public class DexUtil {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
             Reflector reflector = Reflector.with(basePathList);
             List<File> nativeLibraryDirectories = reflector.field("nativeLibraryDirectories").get();
-            nativeLibraryDirectories.add(context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE));
+            nativeLibraryDirectories.add(nativeLibsDir);
 
             Object baseNativeLibraryPathElements = reflector.field("nativeLibraryPathElements").get();
             final int baseArrayLength = Array.getLength(baseNativeLibraryPathElements);
@@ -107,7 +107,7 @@ public class DexUtil {
             final int N = nativeLibraryDirectories.length;
             File[] newNativeLibraryDirectories = new File[N + 1];
             System.arraycopy(nativeLibraryDirectories, 0, newNativeLibraryDirectories, 0, N);
-            newNativeLibraryDirectories[N] = context.getDir(Constants.NATIVE_DIR, Context.MODE_PRIVATE);
+            newNativeLibraryDirectories[N] = nativeLibsDir;
             reflector.set(newNativeLibraryDirectories);
         }
     }
