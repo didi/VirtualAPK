@@ -197,7 +197,16 @@ public class PluginManager {
             return;
         }
         synchronized (mCallbacks) {
+            if (mCallbacks.contains(callback)) {
+                throw new RuntimeException("Already added " + callback + "!");
+            }
             mCallbacks.add(callback);
+        }
+    }
+    
+    public void removeCallback(Callback callback) {
+        synchronized (mCallbacks) {
+            mCallbacks.remove(callback);
         }
     }
 
