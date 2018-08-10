@@ -84,6 +84,11 @@ public class LocalService extends Service {
 
         ComponentName component = target.getComponent();
         LoadedPlugin plugin = mPluginManager.getLoadedPlugin(component);
+        
+        if (plugin == null) {
+            Log.w(TAG, "Error target: " + target.toURI());
+            return START_STICKY;
+        }
         // ClassNotFoundException when unmarshalling in Android 5.1
         target.setExtrasClassLoader(plugin.getClassLoader());
         switch (command) {
