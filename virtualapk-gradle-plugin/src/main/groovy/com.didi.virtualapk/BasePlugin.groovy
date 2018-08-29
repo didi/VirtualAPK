@@ -162,7 +162,9 @@ public abstract class BasePlugin implements Plugin<Project> {
         boolean isBuildingPlugin = false
         NameMatcher nameMatcher = new NameMatcher()
         targetTasks.every {
-            String taskName = nameMatcher.find(it, pluginTasks)
+            int index = it.lastIndexOf(":");
+            String task = index >= 0 ? it.substring(index + 1) : it
+            String taskName = nameMatcher.find(task, pluginTasks)
             if (taskName != null) {
 //                Log.i 'VAPlugin', "Found task name '${taskName}' by given name '${it}'"
                 isBuildingPlugin = true

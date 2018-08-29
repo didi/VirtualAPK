@@ -130,8 +130,8 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         File hostDir = vaContext.getBuildDir(scope)
         FileUtil.saveFile(hostDir, "${taskName}-retainedTypes", retainedTypes)
         FileUtil.saveFile(hostDir, "${taskName}-retainedStylealbes", retainedStylealbes)
-        FileUtil.saveFile(hostDir, "${taskName}-filteredResources", filteredResources)
-        FileUtil.saveFile(hostDir, "${taskName}-updatedResources", updatedResources)
+        FileUtil.saveFile(hostDir, "${taskName}-filteredResources", true, filteredResources)
+        FileUtil.saveFile(hostDir, "${taskName}-updatedResources", true, updatedResources)
 
         /*
          * Delete filtered entries and then add updated resources into resources-${variant.name}.ap_
