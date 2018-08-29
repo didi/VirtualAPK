@@ -13,6 +13,7 @@ import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
+import com.didi.virtualapk.utils.Reflect
 import com.google.common.collect.ListMultimap
 import com.google.common.io.Files
 import org.gradle.api.Project
@@ -59,9 +60,11 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
     @Override
     void afterTaskExecute(ProcessAndroidResources par) {
         if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
-            File outputFile = com.android.build.gradle.internal.scope.ExistingBuildElements
-                    .from(TaskOutputHolder.TaskOutputType.PROCESSED_RES, scope.getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES))
-                    .element(variantData.outputScope.mainSplit).outputFile
+            File outputFile = Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
+                    .call('from', TaskOutputHolder.TaskOutputType.PROCESSED_RES, scope.getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES))
+                    .call('element', variantData.outputScope.mainSplit)
+                    .call('getOutputFile')
+                    .get()
             repackage(par, outputFile)
         } else {
             variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.PROCESSED_RES).each {

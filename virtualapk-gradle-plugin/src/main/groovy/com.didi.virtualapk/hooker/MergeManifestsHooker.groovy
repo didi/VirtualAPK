@@ -59,9 +59,11 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
     @Override
     void afterTaskExecute(MergeManifests task) {
         if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
-            File outputFile = com.android.build.gradle.internal.scope.ExistingBuildElements
-                    .from(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS, scope.getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS))
-                    .element(variantData.outputScope.mainSplit).outputFile
+            File outputFile = Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
+                    .call('from', TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS, scope.getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS))
+                    .call('element', variantData.outputScope.mainSplit)
+                    .call('getOutputFile')
+                    .get()
             rewrite(outputFile)
         } else {
             variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).each {

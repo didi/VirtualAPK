@@ -80,7 +80,9 @@ public abstract class BasePlugin implements Plugin<Project> {
             TaskManager taskManager = Reflect.on(appPlugin).field('taskManager').get()
             taskFactory = taskManager.getTaskFactory()
         } else {
-            taskFactory = Reflect.on('com.android.build.gradle.internal.TaskContainerAdaptor').create(project.tasks).get()
+            taskFactory = Reflect.on('com.android.build.gradle.internal.TaskContainerAdaptor')
+                    .create(project.tasks)
+                    .get()
         }
         project.afterEvaluate {
 
@@ -140,9 +142,13 @@ public abstract class BasePlugin implements Plugin<Project> {
             appPlugin.variantManager.productFlavors.each {
                 String variantName
                 if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
-                    variantName = com.android.build.gradle.internal.core.VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+                    variantName = Reflect.on('com.android.build.gradle.internal.core.VariantConfiguration')
+                            .call('computeFullName', it.key, buildType, VariantType.DEFAULT, null)
+                            .get()
                 } else {
-                    variantName = com.android.builder.core.VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+                    variantName = Reflect.on('com.android.builder.core.VariantConfiguration')
+                            .call('computeFullName', it.key, buildType, VariantType.DEFAULT, null)
+                            .get()
                 }
                 def variantPluginTaskName = createPluginTaskName("assemble${variantName.capitalize()}Plugin".toString())
                 pluginTasks.add(variantPluginTaskName)

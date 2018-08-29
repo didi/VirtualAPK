@@ -11,6 +11,7 @@ import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
+import com.didi.virtualapk.utils.Reflect
 import com.google.common.collect.ImmutableMap
 import org.gradle.api.Project
 
@@ -70,7 +71,9 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         }
         Dependencies dependencies
         if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
-            ImmutableMap<String, String> buildMapping = com.android.build.gradle.internal.ide.ModelBuilder.computeBuildMapping(project.gradle)
+            ImmutableMap<String, String> buildMapping = Reflect.on('com.android.build.gradle.internal.ide.ModelBuilder')
+                    .call('computeBuildMapping', project.gradle)
+                    .get()
             dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, buildMapping, consumer)
         } else {
             dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, consumer)

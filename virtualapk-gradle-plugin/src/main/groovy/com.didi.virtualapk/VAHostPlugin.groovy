@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
+import com.didi.virtualapk.utils.Reflect
 import com.google.common.collect.ImmutableMap
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -97,7 +98,9 @@ public class VAHostPlugin implements Plugin<Project> {
                 Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
                 Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts
                 if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
-                    ImmutableMap<String, String> buildMapping = com.android.build.gradle.internal.ide.ModelBuilder.computeBuildMapping(project.gradle)
+                    ImmutableMap<String, String> buildMapping = Reflect.on('com.android.build.gradle.internal.ide.ModelBuilder')
+                            .call('computeBuildMapping', project.gradle)
+                            .get()
                     compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
                             applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null, buildMapping)
                 } else {
