@@ -61,7 +61,13 @@ public class Aapt {
     void filterResources(final List<?> retainedTypes, final Set<String> outFilteredResources) {
         def resDir = new File(assetDir, 'res')
         resDir.listFiles().each { typeDir ->
-            def type = retainedTypes.find { typeDir.name.startsWith(it.name) }
+            def type = retainedTypes.find {
+                if (typeDir.name.startsWith("animator")) {
+                    it.name == "animator"
+                } else {
+                    typeDir.name.startsWith(it.name)
+                }
+            }
             if (type == null) {
                 typeDir.listFiles().each {
                     outFilteredResources.add("res/$typeDir.name/$it.name")
