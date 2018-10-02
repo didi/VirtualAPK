@@ -80,7 +80,7 @@ public class LoadedPlugin {
     protected File getDir(Context context, String name) {
         return context.getDir(name, Context.MODE_PRIVATE);
     }
-    
+
     protected ClassLoader createClassLoader(Context context, File apk, File libsDir, ClassLoader parent) throws Exception {
         File dexOutputDir = getDir(context, Constants.OPTIMIZE_DIR);
         String dexOutputPath = dexOutputDir.getAbsolutePath();
@@ -108,16 +108,16 @@ public class LoadedPlugin {
             return new Resources(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());
         }
     }
-    
+
     protected PluginPackageManager createPluginPackageManager() {
         return new PluginPackageManager();
     }
-    
+
     public PluginContext createPluginContext(Context context) {
         if (context == null) {
             return new PluginContext(this);
         }
-        
+
         return new PluginContext(this, context);
     }
 
@@ -143,6 +143,17 @@ public class LoadedPlugin {
     protected Map<String, ProviderInfo> mProviders; // key is authorities of provider
     protected Map<ComponentName, InstrumentationInfo> mInstrumentationInfos;
 
+
+    public static final int TYPE_ACTIVITY = 1;
+    public static final int TYPE_SERVICE = 2;
+    public static final int TYPE_BROADCAST_RECEIVER = 3;
+
+
+    protected Map<String, List<PackageParser.Component>> mActivityMatchMap = new HashMap<>();
+    protected Map<String, List<PackageParser.Component>> mServiceMatchMap = new HashMap<>();
+    protected Map<String, List<PackageParser.Component>> mBroadcastReceiverMatchMap = new HashMap<>();
+
+
     protected Application mApplication;
 
     public LoadedPlugin(PluginManager pluginManager, Context context, File apk) throws Exception {
@@ -154,7 +165,7 @@ public class LoadedPlugin {
         this.mPackageInfo = new PackageInfo();
         this.mPackageInfo.applicationInfo = this.mPackage.applicationInfo;
         this.mPackageInfo.applicationInfo.sourceDir = apk.getAbsolutePath();
-    
+
         if (Build.VERSION.SDK_INT >= 28
             || (Build.VERSION.SDK_INT == 27 && Build.VERSION.PREVIEW_SDK_INT != 0)) { // Android P Preview
             try {
@@ -166,7 +177,7 @@ public class LoadedPlugin {
         } else {
             this.mPackageInfo.signatures = this.mPackage.mSignatures;
         }
-        
+
         this.mPackageInfo.packageName = this.mPackage.packageName;
         if (pluginManager.getLoadedPlugin(mPackageInfo.packageName) != null) {
             throw new RuntimeException("plugin has already been loaded : " + mPackageInfo.packageName);
@@ -199,6 +210,7 @@ public class LoadedPlugin {
         }
         this.mActivityInfos = Collections.unmodifiableMap(activityInfos);
         this.mPackageInfo.activities = activityInfos.values().toArray(new ActivityInfo[activityInfos.size()]);
+        initMatchMap(mPackage.activities, TYPE_ACTIVITY);
 
         // Cache services
         Map<ComponentName, ServiceInfo> serviceInfos = new HashMap<ComponentName, ServiceInfo>();
@@ -207,6 +219,7 @@ public class LoadedPlugin {
         }
         this.mServiceInfos = Collections.unmodifiableMap(serviceInfos);
         this.mPackageInfo.services = serviceInfos.values().toArray(new ServiceInfo[serviceInfos.size()]);
+        initMatchMap(mPackage.services, TYPE_SERVICE);
 
         // Cache providers
         Map<String, ProviderInfo> providers = new HashMap<String, ProviderInfo>();
@@ -223,7 +236,7 @@ public class LoadedPlugin {
         Map<ComponentName, ActivityInfo> receivers = new HashMap<ComponentName, ActivityInfo>();
         for (PackageParser.Activity receiver : this.mPackage.receivers) {
             receivers.put(receiver.getComponentName(), receiver.info);
-    
+
             BroadcastReceiver br = BroadcastReceiver.class.cast(getClassLoader().loadClass(receiver.getComponentName().getClassName()).newInstance());
             for (PackageParser.ActivityIntentInfo aii : receiver.intents) {
                 this.mHostContext.registerReceiver(br, aii);
@@ -231,7 +244,7 @@ public class LoadedPlugin {
         }
         this.mReceiverInfos = Collections.unmodifiableMap(receivers);
         this.mPackageInfo.receivers = receivers.values().toArray(new ActivityInfo[receivers.size()]);
-    
+        initMatchMap(mPackage.receivers, TYPE_BROADCAST_RECEIVER);
         // try to invoke plugin's application
         invokeApplication();
     }
@@ -300,7 +313,7 @@ public class LoadedPlugin {
                 }
             }
         }, true);
-        
+
         if (temp[0] != null) {
             throw temp[0];
         }
@@ -392,7 +405,7 @@ public class LoadedPlugin {
         if (forceDefaultAppClass || null == appClass) {
             appClass = "android.app.Application";
         }
-    
+
         this.mApplication = instrumentation.newApplication(this.mClassLoader, appClass, this.getPluginContext());
         // inject activityLifecycleCallbacks of the host application
         mApplication.registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacksProxy());
@@ -411,30 +424,9 @@ public class LoadedPlugin {
     }
 
     public List<ResolveInfo> queryIntentActivities(Intent intent, int flags) {
-        ComponentName component = intent.getComponent();
-        List<ResolveInfo> resolveInfos = new ArrayList<ResolveInfo>();
-        ContentResolver resolver = this.mPluginContext.getContentResolver();
-
-        for (PackageParser.Activity activity : this.mPackage.activities) {
-            if (match(activity, component)) {
-                ResolveInfo resolveInfo = new ResolveInfo();
-                resolveInfo.activityInfo = activity.info;
-                resolveInfos.add(resolveInfo);
-            } else if (component == null) {
-                // only match implicit intent
-                for (PackageParser.ActivityIntentInfo intentInfo : activity.intents) {
-                    if (intentInfo.match(resolver, intent, true, TAG) >= 0) {
-                        ResolveInfo resolveInfo = new ResolveInfo();
-                        resolveInfo.activityInfo = activity.info;
-                        resolveInfos.add(resolveInfo);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return resolveInfos;
+        return queryComponent(intent, TYPE_ACTIVITY);
     }
+
 
     public ResolveInfo resolveService(Intent intent, int flags) {
         List<ResolveInfo> query = this.queryIntentServices(intent, flags);
@@ -447,71 +439,141 @@ public class LoadedPlugin {
     }
 
     public List<ResolveInfo> queryIntentServices(Intent intent, int flags) {
-        ComponentName component = intent.getComponent();
-        List<ResolveInfo> resolveInfos = new ArrayList<ResolveInfo>();
-        ContentResolver resolver = this.mPluginContext.getContentResolver();
-
-        for (PackageParser.Service service : this.mPackage.services) {
-            if (match(service, component)) {
-                ResolveInfo resolveInfo = new ResolveInfo();
-                resolveInfo.serviceInfo = service.info;
-                resolveInfos.add(resolveInfo);
-            } else if (component == null) {
-                // only match implicit intent
-                for (PackageParser.ServiceIntentInfo intentInfo : service.intents) {
-                    if (intentInfo.match(resolver, intent, true, TAG) >= 0) {
-                        ResolveInfo resolveInfo = new ResolveInfo();
-                        resolveInfo.serviceInfo = service.info;
-                        resolveInfos.add(resolveInfo);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return resolveInfos;
+        return queryComponent(intent, TYPE_SERVICE);
     }
 
+
     public List<ResolveInfo> queryBroadcastReceivers(Intent intent, int flags) {
-        ComponentName component = intent.getComponent();
-        List<ResolveInfo> resolveInfos = new ArrayList<ResolveInfo>();
-        ContentResolver resolver = this.mPluginContext.getContentResolver();
-
-        for (PackageParser.Activity receiver : this.mPackage.receivers) {
-            if (receiver.getComponentName().equals(component)) {
-                ResolveInfo resolveInfo = new ResolveInfo();
-                resolveInfo.activityInfo = receiver.info;
-                resolveInfos.add(resolveInfo);
-            } else if (component == null) {
-                // only match implicit intent
-                for (PackageParser.ActivityIntentInfo intentInfo : receiver.intents) {
-                    if (intentInfo.match(resolver, intent, true, TAG) >= 0) {
-                        ResolveInfo resolveInfo = new ResolveInfo();
-                        resolveInfo.activityInfo = receiver.info;
-                        resolveInfos.add(resolveInfo);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return resolveInfos;
+        return queryComponent(intent, TYPE_BROADCAST_RECEIVER);
     }
 
     public ProviderInfo resolveContentProvider(String name, int flags) {
         return this.mProviders.get(name);
     }
 
-    protected boolean match(PackageParser.Component component, ComponentName target) {
-        ComponentName source = component.getComponentName();
-        if (source == target) return true;
-        if (source != null && target != null
-                && source.getClassName().equals(target.getClassName())
-                && (source.getPackageName().equals(target.getPackageName())
-                || mHostContext.getPackageName().equals(target.getPackageName()))) {
-            return true;
+    public List<ResolveInfo> queryComponent(Intent intent, int type) {
+
+        ComponentName componentName = intent.getComponent();
+        List<ResolveInfo> resolveInfos = new ArrayList<ResolveInfo>();
+
+        List<PackageParser.Component> matchComponent = getMatchComponent(componentName, type);
+        for (PackageParser.Component component : matchComponent) {
+            resolveInfos.add(getResolveInfo(component));
         }
-        return false;
+
+        if (componentName == null) {
+            List<? extends PackageParser.Component<? extends PackageParser.IntentInfo>> components = Collections.emptyList();
+            if (type == TYPE_ACTIVITY) {
+                components = this.mPackage.activities;
+            } else if (type == TYPE_SERVICE) {
+                components = this.mPackage.services;
+            } else if (type == TYPE_BROADCAST_RECEIVER) {
+                components = this.mPackage.receivers;
+            }
+
+            setupImplicitIntent(intent, resolveInfos, components);
+        }
+
+        return resolveInfos;
+
+
+    }
+
+    private ResolveInfo getResolveInfo(PackageParser.Component component) {
+        ResolveInfo resolveInfo = new ResolveInfo();
+        if (component instanceof PackageParser.Activity)
+            resolveInfo.activityInfo = PackageParser.Activity.class.cast(component).info;
+        if (component instanceof PackageParser.Service)
+            resolveInfo.serviceInfo = PackageParser.Service.class.cast(component).info;
+        return resolveInfo;
+    }
+
+
+    private void initMatchMap(List<? extends PackageParser.Component> packageComponents, int type) {
+        Map<String, List<PackageParser.Component>> map = null;
+        if (type == TYPE_ACTIVITY) {
+            map = mActivityMatchMap;
+        } else if (type == TYPE_SERVICE) {
+            map = mServiceMatchMap;
+        } else if (type == TYPE_BROADCAST_RECEIVER) {
+            map = mBroadcastReceiverMatchMap;
+        } else {
+            return;
+        }
+
+        for (PackageParser.Component component : packageComponents) {
+            ComponentName componentName = component.getComponentName();
+            String key = getMatchMapKey(componentName.getPackageName(), componentName.getClassName());
+            addToMatchMap(map, component, key);
+            if (type != TYPE_BROADCAST_RECEIVER) {
+                key = getMatchMapKey(mHostContext.getPackageName(), componentName.getClassName());
+                addToMatchMap(map, component, key);
+            }
+
+        }
+    }
+
+    private String getMatchMapKey(String pkg, String cls) {
+        return pkg + "/" + cls;
+    }
+
+
+    private void addToMatchMap(Map<String, List<PackageParser.Component>> map, PackageParser.Component component, String key) {
+        List<PackageParser.Component> components;
+        if (map.containsKey(key)) {
+            components = map.get(key);
+        } else {
+            components = new ArrayList<>();
+            map.put(key, components);
+        }
+        components.add(component);
+    }
+
+
+    private List<PackageParser.Component> getMatchComponent(@Nullable ComponentName componentName, int type) {
+
+        Map<String, List<PackageParser.Component>> map = null;
+        if (type == TYPE_ACTIVITY) {
+            map = mActivityMatchMap;
+        } else if (type == TYPE_SERVICE) {
+            map = mServiceMatchMap;
+        } else if (type == TYPE_BROADCAST_RECEIVER) {
+            map = mBroadcastReceiverMatchMap;
+        } else {
+            return Collections.emptyList();
+        }
+
+        if (componentName == null) return Collections.emptyList();
+
+
+        String key = getMatchMapKey(mHostContext.getPackageName(), componentName.getClassName());
+
+        List<PackageParser.Component> matchComponent = new ArrayList<>();
+        if (type != TYPE_BROADCAST_RECEIVER && map.containsKey(key)) {
+            matchComponent.addAll(map.get(key));
+        }
+
+        if (!matchComponent.isEmpty()) return matchComponent;
+        key = getMatchMapKey(componentName.getPackageName(), componentName.getClassName());
+
+        if (map.containsKey(key)) {
+            matchComponent.addAll(map.get(key));
+        }
+
+        return matchComponent;
+    }
+
+    private void setupImplicitIntent(Intent intent, List<ResolveInfo> resolveInfos, List<? extends PackageParser.Component<? extends PackageParser.IntentInfo>> components) {
+        ContentResolver resolver = this.mPluginContext.getContentResolver();
+        for (PackageParser.Component<? extends PackageParser.IntentInfo> component : components) {
+            // only match implicit intent
+            for (PackageParser.IntentInfo intentInfo : component.intents) {
+                if (intentInfo.match(resolver, intent, true, TAG) >= 0) {
+                    resolveInfos.add(getResolveInfo(component));
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -531,7 +593,7 @@ public class LoadedPlugin {
 
             return this.mHostPackageManager.getPackageInfo(packageName, flags);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public PackageInfo getPackageInfo(VersionedPackage versionedPackage, int i) throws NameNotFoundException {
@@ -543,7 +605,7 @@ public class LoadedPlugin {
 
             return this.mHostPackageManager.getPackageInfo(versionedPackage, i);
         }
-    
+
         @Override
         public String[] currentToCanonicalPackageNames(String[] names) {
             return this.mHostPackageManager.currentToCanonicalPackageNames(names);
@@ -579,13 +641,13 @@ public class LoadedPlugin {
         public int[] getPackageGids(@NonNull String packageName) throws NameNotFoundException {
             return this.mHostPackageManager.getPackageGids(packageName);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.N)
         @Override
         public int[] getPackageGids(String packageName, int flags) throws NameNotFoundException {
             return this.mHostPackageManager.getPackageGids(packageName, flags);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.N)
         @Override
         public int getPackageUid(String packageName, int flags) throws NameNotFoundException {
@@ -723,63 +785,63 @@ public class LoadedPlugin {
         public List<ApplicationInfo> getInstalledApplications(int flags) {
             return this.mHostPackageManager.getInstalledApplications(flags);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public boolean isInstantApp() {
             return this.mHostPackageManager.isInstantApp();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public boolean isInstantApp(String packageName) {
             return this.mHostPackageManager.isInstantApp(packageName);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public int getInstantAppCookieMaxBytes() {
             return this.mHostPackageManager.getInstantAppCookieMaxBytes();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @NonNull
         @Override
         public byte[] getInstantAppCookie() {
             return this.mHostPackageManager.getInstantAppCookie();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public void clearInstantAppCookie() {
             this.mHostPackageManager.clearInstantAppCookie();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public void updateInstantAppCookie(@Nullable byte[] cookie) {
             this.mHostPackageManager.updateInstantAppCookie(cookie);
         }
-    
+
         @Override
         public String[] getSystemSharedLibraryNames() {
             return this.mHostPackageManager.getSystemSharedLibraryNames();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @NonNull
         @Override
         public List<SharedLibraryInfo> getSharedLibraries(int flags) {
             return this.mHostPackageManager.getSharedLibraries(flags);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Nullable
         @Override
         public ChangedPackages getChangedPackages(int sequenceNumber) {
             return this.mHostPackageManager.getChangedPackages(sequenceNumber);
         }
-    
+
         @Override
         public FeatureInfo[] getSystemAvailableFeatures() {
             return this.mHostPackageManager.getSystemAvailableFeatures();
@@ -795,7 +857,7 @@ public class LoadedPlugin {
         public boolean hasSystemFeature(String name, int version) {
             return this.mHostPackageManager.hasSystemFeature(name, version);
         }
-    
+
         @Override
         public ResolveInfo resolveActivity(Intent intent, int flags) {
             ResolveInfo resolveInfo = mPluginManager.resolveActivity(intent, flags);
@@ -1288,25 +1350,25 @@ public class LoadedPlugin {
         public boolean isSafeMode() {
             return this.mHostPackageManager.isSafeMode();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public void setApplicationCategoryHint(@NonNull String packageName, int categoryHint) {
             this.mHostPackageManager.setApplicationCategoryHint(packageName, categoryHint);
         }
-    
+
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
         public @NonNull PackageInstaller getPackageInstaller() {
             return this.mHostPackageManager.getPackageInstaller();
         }
-    
+
         @TargetApi(Build.VERSION_CODES.O)
         @Override
         public boolean canRequestPackageInstalls() {
             return this.mHostPackageManager.canRequestPackageInstalls();
         }
-    
+
         public Drawable loadItemIcon(PackageItemInfo itemInfo, ApplicationInfo appInfo) {
             if (itemInfo == null) {
                 return null;
