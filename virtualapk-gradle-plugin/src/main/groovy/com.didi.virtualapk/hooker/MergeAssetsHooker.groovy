@@ -2,7 +2,6 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.tasks.MergeSourceSetFolders
-import com.android.ide.common.res2.AssetSet
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
@@ -42,31 +41,31 @@ class MergeAssetsHooker extends GradleTaskHooker<MergeSourceSetFolders> {
         }
 
         Reflect reflect = Reflect.on(task)
-        reflect.set('assetSetSupplier', new FixedSupplier(this, reflect.get('assetSetSupplier'), strippedAssetPaths))
+        reflect.set('assetSetSupplier', new FixedSupplier<>(this, reflect.get('assetSetSupplier'), strippedAssetPaths))
     }
 
     @Override
     void afterTaskExecute(MergeSourceSetFolders task) {
     }
     
-    static class FixedSupplier implements Supplier<List<AssetSet>> {
+    static class FixedSupplier<T> implements Supplier<List<T>> {
 
         MergeAssetsHooker hooker
-        Supplier<List<AssetSet>> origin
+        Supplier<List<T>> origin
         Set<String> strippedAssetPaths
         
-        FixedSupplier(MergeAssetsHooker hooker, Supplier<List<AssetSet>> origin, Set<String> strippedAssetPaths) {
+        FixedSupplier(MergeAssetsHooker hooker, Supplier<List<T>> origin, Set<String> strippedAssetPaths) {
             this.hooker = hooker
             this.origin = origin
             this.strippedAssetPaths = strippedAssetPaths
         }
         
         @Override
-        List<AssetSet> get() {
-            List<AssetSet> assetSets = origin.get()
-            assetSets.removeIf(new Predicate<AssetSet>() {
+        List<T> get() {
+            List<T> assetSets = origin.get()
+            assetSets.removeIf(new Predicate<T>() {
                 @Override
-                boolean test(AssetSet assetSet) {
+                boolean test(T assetSet) {
                     boolean ret = strippedAssetPaths.contains(assetSet.sourceFiles.get(0).path)
                     if (ret) {
                         Log.i 'MergeAssetsHooker', "Stripped asset of artifact: ${assetSet} -> ${assetSet.sourceFiles.get(0).path}"

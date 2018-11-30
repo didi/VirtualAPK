@@ -5,7 +5,7 @@ import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.tasks.AppPreBuildTask
 import com.android.builder.model.Dependencies
 import com.android.builder.model.SyncIssue
-import com.didi.virtualapk.Constants
+import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
@@ -70,7 +70,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
             }
         }
         Dependencies dependencies
-        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
             ImmutableMap<String, String> buildMapping = Reflect.on('com.android.build.gradle.internal.ide.ModelBuilder')
                     .call('computeBuildMapping', project.gradle)
                     .get()

@@ -3,14 +3,15 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.scope.TaskOutputHolder
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.sdklib.BuildToolInfo
-import com.didi.virtualapk.Constants
+import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.aapt.Aapt
 import com.didi.virtualapk.collector.ResourceCollector
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
+import com.didi.virtualapk.support.ScopeCompat
+
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
@@ -59,15 +60,17 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
      */
     @Override
     void afterTaskExecute(ProcessAndroidResources par) {
-        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+
+        def PROCESSED_RES = ScopeCompat.getArtifact(project, "PROCESSED_RES")
+        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
             File outputFile = Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
-                    .call('from', TaskOutputHolder.TaskOutputType.PROCESSED_RES, scope.getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES))
+                    .call('from', PROCESSED_RES, ScopeCompat.getArtifactFile(scope, project, PROCESSED_RES))
                     .call('element', variantData.outputScope.mainSplit)
                     .call('getOutputFile')
                     .get()
             repackage(par, outputFile)
         } else {
-            variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.PROCESSED_RES).each {
+            variantData.outputScope.getOutputs(PROCESSED_RES).each {
                 repackage(par, it.outputFile)
             }
         }
@@ -198,18 +201,18 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
 
         pluginResources.keySet().each { resType ->
             def firstEntry = pluginResources.get(resType).get(0)
-            def typeEntry = [ type: "int", name: resType,
-                              id: parseTypeIdFromResId(firstEntry.resourceId),
-                              _id: parseTypeIdFromResId(firstEntry.newResourceId),
-                              entries: []]
+            def typeEntry = [type   : "int", name: resType,
+                             id     : parseTypeIdFromResId(firstEntry.resourceId),
+                             _id    : parseTypeIdFromResId(firstEntry.newResourceId),
+                             entries: []]
 
             pluginResources.get(resType).each { resEntry ->
                 typeEntry.entries.add([
-                        name : resEntry.resourceName,
-                        id : parseEntryIdFromResId(resEntry.resourceId),
-                        _id: parseEntryIdFromResId(resEntry.newResourceId),
-                        v : resEntry.resourceId, _v : resEntry.newResourceId,
-                        vs: resEntry.hexResourceId, _vs : resEntry.hexNewResourceId])
+                        name: resEntry.resourceName,
+                        id  : parseEntryIdFromResId(resEntry.resourceId),
+                        _id : parseEntryIdFromResId(resEntry.newResourceId),
+                        v   : resEntry.resourceId, _v: resEntry.newResourceId,
+                        vs  : resEntry.hexResourceId, _vs: resEntry.hexNewResourceId])
             }
 
             retainedTypes.add(typeEntry)
@@ -218,7 +221,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
         retainedTypes.sort { t1, t2 ->
             t1._id - t2._id
         }
-        
+
         return retainedTypes
     }
 
@@ -229,10 +232,10 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
     def convertStyleablesForAapt(List<StyleableEntry> pluginStyleables) {
         def retainedStyleables = []
         pluginStyleables.each { styleableEntry ->
-            retainedStyleables.add([vtype : styleableEntry.valueType,
+            retainedStyleables.add([vtype: styleableEntry.valueType,
                                     type : 'styleable',
-                                    key : styleableEntry.name,
-                                    idStr : styleableEntry.value])
+                                    key  : styleableEntry.name,
+                                    idStr: styleableEntry.value])
         }
         return retainedStyleables
     }
