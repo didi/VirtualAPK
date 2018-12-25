@@ -1,3 +1,5 @@
+# Android 9.0 supported! Please use [the lastest release](https://github.com/didi/VirtualAPK/releases).
+
 # <img src="imgs/va-logo.png" width="200px" align="center" alt="VirtualAPK"/>
 [![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/didi/VirtualAPK/blob/master/LICENSE)
 [![Release Version](https://img.shields.io/badge/release-0.9.8-red.svg)](https://github.com/didi/VirtualAPK/releases)
