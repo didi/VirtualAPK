@@ -229,7 +229,7 @@ public class PluginUtil {
                 continue;
             }
             if (entryName.charAt(0) > 'l') {
-                break;
+                continue;
             }
             if (!findLib && !entryName.startsWith("lib/")) {
                 continue;
