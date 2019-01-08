@@ -197,8 +197,7 @@ public class VAHostPlugin implements Plugin<Project> {
     }
 
 
-    def collectResourceEntries(
-            final File mergeXml, final String projectResDir, final Map typeEntries) {
+    def collectResourceEntries(final File mergeXml, final String projectResDir, final Map typeEntries) {
 
         collectAarResourceEntries(null, projectResDir, mergeXml, typeEntries)
 
@@ -214,8 +213,7 @@ public class VAHostPlugin implements Plugin<Project> {
     }
 
 
-    def collectAarResourceEntries(String aarVersion, String resPath, File mergeXml,
-                                  final Map typeEntries) {
+    def collectAarResourceEntries(String aarVersion, String resPath, File mergeXml, final Map typeEntries) {
         final def merger = new XmlParser().parse(mergeXml)
         def filter = aarVersion == null ? {
             it.@config == 'main' || it.@config == 'release'
