@@ -1,10 +1,10 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.scope.TaskOutputHolder
 import com.android.build.gradle.tasks.MergeManifests
-import com.didi.virtualapk.Constants
+import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.collector.dependence.DependenceInfo
+import com.didi.virtualapk.support.ScopeCompat
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
 import groovy.xml.QName
@@ -58,27 +58,28 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
      */
     @Override
     void afterTaskExecute(MergeManifests task) {
-        if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
-            File outputFile = Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
-                    .call('from', TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS, scope.getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS))
-                    .call('element', variantData.outputScope.mainSplit)
+        def MERGED_MANIFESTS = ScopeCompat.getArtifact(project, "MERGED_MANIFESTS")
+        if (Build.isSupportVersion(project,Build.VERSION_CODE.V3_1_X)) {
+            File outputFile = (Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
+                    .call('from', MERGED_MANIFESTS, ScopeCompat.getArtifactFile(scope, project, MERGED_MANIFESTS))
+                    .call('element', variantData.outputScope.mainSplit))
                     .call('getOutputFile')
                     .get()
             rewrite(outputFile)
         } else {
-            variantData.outputScope.getOutputs(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).each {
+            variantData.outputScope.getOutputs(MERGED_MANIFESTS).each {
                 rewrite(it.outputFile)
             }
         }
     }
-    
+
     void rewrite(File xml) {
         if (xml?.exists()) {
             final Node manifest = new XmlParser().parse(xml)
 
 
             manifest.application.each { application ->
-                [ 'icon', 'label', 'allowBackup', 'supportsRtl' ].each {
+                ['icon', 'label', 'allowBackup', 'supportsRtl'].each {
                     application.attributes().remove(new QName(MergeManifestsHooker.ANDROID_NAMESPACE, it))
                 }
             }
@@ -88,13 +89,13 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
             })
         }
     }
-    
+
     private static class FixedArtifactCollection implements ArtifactCollection {
 
         private MergeManifestsHooker hooker
         private ArtifactCollection origin
         def stripAarNames
-        
+
         FixedArtifactCollection(MergeManifestsHooker hooker, ArtifactCollection origin, stripAarNames) {
             this.hooker = hooker
             this.origin = origin
