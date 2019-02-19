@@ -167,7 +167,7 @@ public class LoadedPlugin {
         this.mPackageInfo.applicationInfo.sourceDir = apk.getAbsolutePath();
 
         if (Build.VERSION.SDK_INT >= 28
-            || (Build.VERSION.SDK_INT == 27 && Build.VERSION.PREVIEW_SDK_INT != 0)) { // Android P Preview
+                || (Build.VERSION.SDK_INT == 27 && Build.VERSION.PREVIEW_SDK_INT != 0)) { // Android P Preview
             try {
                 this.mPackageInfo.signatures = this.mPackage.mSigningDetails.signatures;
             } catch (Throwable e) {
@@ -545,22 +545,8 @@ public class LoadedPlugin {
 
         if (componentName == null) return Collections.emptyList();
 
-
-        String key = getMatchMapKey(mHostContext.getPackageName(), componentName.getClassName());
-
-        List<PackageParser.Component> matchComponent = new ArrayList<>();
-        if (type != TYPE_BROADCAST_RECEIVER && map.containsKey(key)) {
-            matchComponent.addAll(map.get(key));
-        }
-
-        if (!matchComponent.isEmpty()) return matchComponent;
-        key = getMatchMapKey(componentName.getPackageName(), componentName.getClassName());
-
-        if (map.containsKey(key)) {
-            matchComponent.addAll(map.get(key));
-        }
-
-        return matchComponent;
+        String key = getMatchMapKey(componentName.getPackageName(), componentName.getClassName());
+        return  map.get(key);
     }
 
     private void setupImplicitIntent(Intent intent, List<ResolveInfo> resolveInfos, List<? extends PackageParser.Component<? extends PackageParser.IntentInfo>> components) {
@@ -1182,8 +1168,8 @@ public class LoadedPlugin {
         public Drawable getUserBadgeForDensity(UserHandle user, int density) {
             try {
                 return Reflector.with(this.mHostPackageManager)
-                    .method("getUserBadgeForDensity", UserHandle.class, int.class)
-                    .call(user, density);
+                        .method("getUserBadgeForDensity", UserHandle.class, int.class)
+                        .call(user, density);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -1359,7 +1345,8 @@ public class LoadedPlugin {
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
-        public @NonNull PackageInstaller getPackageInstaller() {
+        public @NonNull
+        PackageInstaller getPackageInstaller() {
             return this.mHostPackageManager.getPackageInstaller();
         }
 
