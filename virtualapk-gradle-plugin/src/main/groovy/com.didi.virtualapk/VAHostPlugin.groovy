@@ -7,6 +7,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources
+import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
@@ -34,19 +35,13 @@ public class VAHostPlugin implements Plugin<Project> {
     public void apply(Project project) {
 
         this.project = project
-        project.ext.set(Constants.GRADLE_3_1_0, false)
 
-        try {
-            Class.forName('com.android.builder.core.VariantConfiguration')
-        } catch (Throwable e) {
-            // com.android.tools.build:gradle:3.1.0
-            project.ext.set(Constants.GRADLE_3_1_0, true)
-        }
-        
+        Build.initGradleVersion(project)
+
         //The target project must be a android application module
         if (!project.plugins.hasPlugin('com.android.application')) {
             Log.e(TAG, "application required!")
-            return;
+            return
         }
 
         vaHostDir = new File(project.getBuildDir(), "VAHost")
@@ -97,7 +92,7 @@ public class VAHostPlugin implements Plugin<Project> {
                 List<String> deps = new ArrayList<String>()
                 Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
                 Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts
-                if (project.extensions.extraProperties.get(Constants.GRADLE_3_1_0)) {
+                if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
                     ImmutableMap<String, String> buildMapping = Reflect.on('com.android.build.gradle.internal.ide.ModelBuilder')
                             .call('computeBuildMapping', project.gradle)
                             .get()
@@ -168,7 +163,7 @@ public class VAHostPlugin implements Plugin<Project> {
     /**
      * Keep the host app resource id same with last publish, in order to compatible with the published plugin
      */
-     def keepResourceIds(variant) {
+    def keepResourceIds(variant) {
 
 
         def VIRTUAL_APK_DIR = new File([project.rootDir, 'virtualapk'].join(File.separator))
@@ -211,7 +206,7 @@ public class VAHostPlugin implements Plugin<Project> {
         project.configurations.compile.resolvedConfiguration.resolvedArtifacts.each {
             if (it.extension == 'aar') {
                 def moduleVersion = it.moduleVersion.id
-                def resPath = new File(aarDir,"${moduleVersion.group}/${moduleVersion.name}/${moduleVersion.version}/res")
+                def resPath = new File(aarDir, "${moduleVersion.group}/${moduleVersion.name}/${moduleVersion.version}/res")
                 collectAarResourceEntries(moduleVersion.version, resPath.path, mergeXml, typeEntries)
             }
         }
@@ -244,9 +239,9 @@ public class VAHostPlugin implements Plugin<Project> {
                             def name = it.@name
                             if (type.endsWith('-array')) {
                                 type = 'array'
-                            } else if (type == 'item'){
+                            } else if (type == 'item') {
                                 type = it.@type
-                            } else if (type == 'declare-styleable'){
+                            } else if (type == 'declare-styleable') {
                                 return
                             }
                             def entrySet = getEntriesSet(type, typeEntries)
@@ -280,20 +275,20 @@ public class VAHostPlugin implements Plugin<Project> {
                 }
                 if (type == 'style') {
                     if (styleNameMap.containsKey(values[2])) {
-                        pw.println "\t<public type=\"${type}\" name=\"${styleNameMap.get(values[2])}\" id=\"${values[3]}\" />"
+                        pw.println "\t<public type=\"${type}\" name=\"${styleNameMap.get(values[2])}\" id=\"${values[3]}\"/>"
                     }
                     return
                 }
                 //ID does not filter and remains redundant
                 if (type == 'id') {
-                    pw.println "\t<public type=\"${type}\" name=\"${values[2]}\" id=\"${values[3]}\" />"
+                    pw.println "\t<public type=\"${type}\" name=\"${values[2]}\" id=\"${values[3]}\"/>"
                     return
                 }
 
                 //Only keep resources' Id that are present in the current project
                 Set entries = hostResourceEntries[type]
                 if (entries != null && entries.contains(values[2])) {
-                    pw.println "\t<public type=\"${type}\" name=\"${values[2]}\" id=\"${values[3]}\" />"
+                    pw.println "\t<public type=\"${type}\" name=\"${values[2]}\" id=\"${values[3]}\"/>"
                 } else {
                     if (entries == null) {
                         if (type != lastSplitType) {
@@ -302,7 +297,7 @@ public class VAHostPlugin implements Plugin<Project> {
                         }
 
                     } else {
-                        if (type != 'attr'){
+                        if (type != 'attr') {
                             println ">>>> ${type} : ${values[2]} is deleted"
                         }
 
@@ -328,7 +323,7 @@ public class VAHostPlugin implements Plugin<Project> {
     }
 
 
-    def Set<String> getEntriesSet (final String type, final Map typeEntries) {
+    def Set<String> getEntriesSet(final String type, final Map typeEntries) {
         def entries = typeEntries[type]
         if (entries == null) {
             entries = [] as Set<String>

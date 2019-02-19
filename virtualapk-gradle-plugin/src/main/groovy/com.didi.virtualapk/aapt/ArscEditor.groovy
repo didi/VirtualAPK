@@ -31,13 +31,9 @@ public class ArscEditor extends AssetEditor {
     private static def LIBRARY_CHUNK_SIZE = 272 // ResTable_lib_header & ResTable_lib_entry
     private static def TABLE_SIZE_POS = 4
 
-    private int mTableConfigSize = 52 // sizeof(ResTable_config)
 
     ArscEditor(File file, def v) {
         super(file, v)
-        if (version != null && version.major >= 24) {
-            mTableConfigSize = 56
-        }
     }
 
     /**
@@ -661,11 +657,13 @@ public class ArscEditor extends AssetEditor {
 //        c.screenConfig2.screenLayout2 = readByte()
 //        c.screenConfig2.screenConfigPad1 = readByte()
 //        c.screenConfig2.screenConfigPad2 = readShort()
-        c.ignored = readBytes(mTableConfigSize)
+        c.size = readInt()
+        c.ignored = readBytes(c.size - 4)
         return c
     }
     /** Write struct ResTable_config */
     def writeTableConfig(c) {
+        writeInt(c.size)
         writeBytes(c.ignored)
     }
 
@@ -682,7 +680,8 @@ public class ArscEditor extends AssetEditor {
             skip(4) // id(1), res0(1), res1(2)
             type.entryCount= readInt()
             type.entriesStart = readInt()
-            skip(mTableConfigSize) // ResTable_type.config: struct ResTable_config
+            def size = readInt()
+            skip(size - 4)  // ResTable_type.config: struct ResTable_config
         }
         return type
     }
