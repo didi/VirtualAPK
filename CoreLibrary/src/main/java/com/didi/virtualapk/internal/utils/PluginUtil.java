@@ -84,7 +84,7 @@ public class PluginUtil {
         }
     
         for (String cat : intent.getCategories()) {
-            if (cat.startsWith(Constants.KEY_CATEGORY)) {
+            if (cat.startsWith(Constants.CATEGORY_PREFIX)) {
                 return true;
             }
         }
