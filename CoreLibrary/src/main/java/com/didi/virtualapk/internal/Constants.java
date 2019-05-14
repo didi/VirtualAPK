@@ -20,9 +20,14 @@ package com.didi.virtualapk.internal;
  * Created by renyugang on 16/8/15.
  */
 public class Constants {
-    public static final String KEY_IS_PLUGIN = "isPlugin";
-    public static final String KEY_TARGET_PACKAGE = "target.package";
-    public static final String KEY_TARGET_ACTIVITY = "target.activity";
+    public static final String KEY_CATEGORY = "va.intent.extra.category";
+    public static final String CATEGORY_PREFIX = "va.intent.category.";
+    public static final String CATEGORY_PREFIX_TARGET_PACKAGE = CATEGORY_PREFIX + "package.";
+    public static final String CATEGORY_PREFIX_TARGET_ACTIVITY = CATEGORY_PREFIX + "activity.";
+    
+//    public static final String KEY_IS_PLUGIN = "isPlugin";
+//    public static final String KEY_TARGET_PACKAGE = "target.package";
+//    public static final String KEY_TARGET_ACTIVITY = "target.activity";
 
     public static final String OPTIMIZE_DIR = "dex";
     public static final String NATIVE_DIR = "valibs";

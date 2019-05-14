@@ -184,6 +184,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 ComponentName component = PluginUtil.getComponent(intent);
                 Intent wrapperIntent = new Intent(intent);
                 wrapperIntent.setClassName(component.getPackageName(), component.getClassName());
+                wrapperIntent.setExtrasClassLoader(activity.getClassLoader());
                 activity.setIntent(wrapperIntent);
                 
             } catch (Exception e) {
@@ -200,7 +201,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             try {
                 Reflector reflector = Reflector.with(r);
                 Intent intent = reflector.field("intent").get();
-                intent.setExtrasClassLoader(mPluginManager.getHostContext().getClassLoader());
+//                intent.setExtrasClassLoader(mPluginManager.getHostContext().getClassLoader());
                 ActivityInfo activityInfo = reflector.field("activityInfo").get();
 
                 if (PluginUtil.isIntentFromPlugin(intent)) {

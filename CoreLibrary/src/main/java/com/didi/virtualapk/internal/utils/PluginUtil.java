@@ -59,18 +59,37 @@ public class PluginUtil {
             return null;
         }
         if (isIntentFromPlugin(intent)) {
-            return new ComponentName(intent.getStringExtra(Constants.KEY_TARGET_PACKAGE),
-                intent.getStringExtra(Constants.KEY_TARGET_ACTIVITY));
+            String pkg = null;
+            String activity = null;
+            for (String cat : intent.getCategories()) {
+                if (cat.startsWith(Constants.CATEGORY_PREFIX_TARGET_PACKAGE)) {
+                    pkg = cat.substring(Constants.CATEGORY_PREFIX_TARGET_PACKAGE.length());
+                    continue;
+                }
+                
+                if (cat.startsWith(Constants.CATEGORY_PREFIX_TARGET_ACTIVITY)) {
+                    activity = cat.substring(Constants.CATEGORY_PREFIX_TARGET_ACTIVITY.length());
+                    continue;
+                }
+            }
+            return new ComponentName(pkg, activity);
         }
         
         return intent.getComponent();
     }
 
     public static boolean isIntentFromPlugin(Intent intent) {
-        if (intent == null) {
+        if (intent == null || intent.getCategories() == null) {
             return false;
         }
-        return intent.getBooleanExtra(Constants.KEY_IS_PLUGIN, false);
+    
+        for (String cat : intent.getCategories()) {
+            if (cat.startsWith(Constants.KEY_CATEGORY)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public static int getTheme(Context context, Intent intent) {

@@ -29,6 +29,8 @@ import android.util.Log;
 
 import com.didi.virtualapk.PluginManager;
 
+import java.util.ArrayList;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -79,9 +81,14 @@ public class ComponentsHandler {
         String targetClassName = intent.getComponent().getClassName();
         // search map and return specific launchmode stub activity
         if (!targetPackageName.equals(mContext.getPackageName()) && mPluginManager.getLoadedPlugin(targetPackageName) != null) {
-            intent.putExtra(Constants.KEY_IS_PLUGIN, true);
-            intent.putExtra(Constants.KEY_TARGET_PACKAGE, targetPackageName);
-            intent.putExtra(Constants.KEY_TARGET_ACTIVITY, targetClassName);
+            // mark plugin by categories
+            Set<String> categories = intent.getCategories();
+            if (categories != null) {
+                intent.putStringArrayListExtra(Constants.KEY_CATEGORY, new ArrayList<>(categories));
+                categories.clear();
+            }
+            intent.addCategory(Constants.CATEGORY_PREFIX_TARGET_PACKAGE + targetPackageName);
+            intent.addCategory(Constants.CATEGORY_PREFIX_TARGET_ACTIVITY + targetClassName);
             dispatchStubActivity(intent);
         }
     }
