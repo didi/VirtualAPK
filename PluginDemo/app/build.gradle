@@ -54,7 +54,7 @@ dependencies {
     // the following aars are also compiled in host project, so they will be filterd when build plugin apk.
     // but, wo can still visit their Class and Resources.
     implementation 'com.android.support:appcompat-v7:23.4.0'
-    implementation 'com.didi.virtualapk:0.9.9.1-dev'
+    implementation 'com.didi.virtualapk:core:0.9.9.1-dev'
 }
 
 apply plugin: 'com.didi.virtualapk.plugin'

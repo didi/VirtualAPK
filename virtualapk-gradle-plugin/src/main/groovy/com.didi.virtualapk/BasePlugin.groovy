@@ -2,15 +2,14 @@ package com.didi.virtualapk
 
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.internal.TaskFactory
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.VariantType
-import com.didi.virtualapk.os.Build
+import com.didi.virtualapk.support.TaskFactoryCompat
 import com.didi.virtualapk.tasks.AssemblePlugin
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect
+import groovy.transform.TypeChecked
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -32,7 +31,7 @@ public abstract class BasePlugin implements Plugin<Project> {
 
     protected Project project
     protected Instantiator instantiator
-    protected TaskFactory taskFactory
+    def taskFactory
 
     boolean checkVariantFactoryInvoked
 
@@ -44,8 +43,6 @@ public abstract class BasePlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         this.project = project
-
-        Build.initGradleVersion(project)
 
         AppPlugin appPlugin = project.plugins.findPlugin(AppPlugin)
 
@@ -71,14 +68,7 @@ public abstract class BasePlugin implements Plugin<Project> {
 
         project.extensions.create('virtualApk', VAExtention)
 
-        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
-            TaskManager taskManager = Reflect.on(appPlugin).field('taskManager').get()
-            taskFactory = taskManager.getTaskFactory()
-        } else {
-            taskFactory = Reflect.on('com.android.build.gradle.internal.TaskContainerAdaptor')
-                    .create(project.tasks)
-                    .get()
-        }
+        taskFactory = TaskFactoryCompat.getTaskFactory(appPlugin, project)
         project.afterEvaluate {
 
             if (!checkVariantFactoryInvoked) {
@@ -91,7 +81,7 @@ public abstract class BasePlugin implements Plugin<Project> {
                     def final variantPluginTaskName = createPluginTaskName(variantAssembleTaskName)
                     final def configAction = new AssemblePlugin.ConfigAction(project, variant)
 
-                    taskFactory.create(variantPluginTaskName, AssemblePlugin, configAction)
+                    TaskFactoryCompat.add(taskFactory, variantPluginTaskName, AssemblePlugin, configAction)
 
                     Action action = new Action<Task>() {
                         @Override
@@ -100,11 +90,7 @@ public abstract class BasePlugin implements Plugin<Project> {
                         }
                     }
 
-                    if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
-                        taskFactory.configure("assemblePlugin", action)
-                    } else {
-                        taskFactory.named("assemblePlugin", action)
-                    }
+                    TaskFactoryCompat.configure(taskFactory, "assemblePlugin", action)
                 }
             }
         }
@@ -119,35 +105,19 @@ public abstract class BasePlugin implements Plugin<Project> {
         return name.replace('Release', '')
     }
 
+    /**
+     * 通过启动命令判断是否要运行的是是打插件包的 Task
+     */
     private boolean evaluateBuildingPlugin(AppPlugin appPlugin, Project project) {
         def startParameter = project.gradle.startParameter
         def targetTasks = startParameter.taskNames
 
         def pluginTasks = ['assemblePlugin'] as List<String>
 
-        appPlugin.variantManager.buildTypes.each {
-            def buildType = it.value.buildType
-            if ('release' != buildType.name) {
-                return
-            }
-            if (appPlugin.variantManager.productFlavors.isEmpty()) {
-                return
-            }
-
-            appPlugin.variantManager.productFlavors.each {
-                String variantName
-                if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
-                    variantName = Reflect.on('com.android.build.gradle.internal.core.VariantConfiguration')
-                            .call('computeFullName', it.key, buildType, VariantType.DEFAULT, null)
-                            .get()
-                } else {
-                    variantName = Reflect.on('com.android.builder.core.VariantConfiguration')
-                            .call('computeFullName', it.key, buildType, VariantType.DEFAULT, null)
-                            .get()
-                }
-                def variantPluginTaskName = createPluginTaskName("assemble${variantName.capitalize()}Plugin".toString())
-                pluginTasks.add(variantPluginTaskName)
-            }
+        if (!appPlugin.variantManager.productFlavors.isEmpty()) {
+            appPlugin.variantManager.variantScopes
+                    .findAll { it.variantConfiguration.buildType.name == "release" }
+                    .forEach { VariantScope scope -> addTaskToListForScope(scope, pluginTasks) }
         }
 
 //        pluginTasks.each {
@@ -169,6 +139,13 @@ public abstract class BasePlugin implements Plugin<Project> {
         }
 
         return isBuildingPlugin
+    }
+
+    @TypeChecked
+    private void addTaskToListForScope(VariantScope scope, List<String> pluginTasks) {
+        String variantName = scope.fullVariantName
+        def variantPluginTaskName = createPluginTaskName("assemble${variantName.capitalize()}Plugin".toString())
+        pluginTasks.add(variantPluginTaskName)
     }
 
     protected abstract void beforeCreateAndroidTasks(boolean isBuildingPlugin)

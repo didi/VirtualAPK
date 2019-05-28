@@ -62,7 +62,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
     void afterTaskExecute(ProcessAndroidResources par) {
 
         def PROCESSED_RES = ScopeCompat.getArtifact(project, "PROCESSED_RES")
-        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
+        if (Build.V3_1_OR_LATER) {
             File outputFile = Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
                     .call('from', PROCESSED_RES, ScopeCompat.getArtifactFile(scope, project, PROCESSED_RES))
                     .call('element', variantData.outputScope.mainSplit)

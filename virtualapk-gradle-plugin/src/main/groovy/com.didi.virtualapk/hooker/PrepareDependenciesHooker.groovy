@@ -1,21 +1,15 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.tasks.AppPreBuildTask
 import com.android.builder.model.Dependencies
-import com.android.builder.model.SyncIssue
-import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.collector.dependence.JarDependenceInfo
+import com.didi.virtualapk.support.ArtifactDependencyGraphCompat
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
-import com.didi.virtualapk.utils.Reflect
-import com.google.common.collect.ImmutableMap
 import org.gradle.api.Project
-
-import java.util.function.Consumer
 
 /**
  * Gather list of dependencies(aar&jar) need to be stripped&retained after the PrepareDependenciesTask finished.
@@ -63,21 +57,8 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
      */
     @Override
     void afterTaskExecute(AppPreBuildTask task) {
-        Consumer consumer = new Consumer<SyncIssue>() {
-            @Override
-            void accept(SyncIssue syncIssue) {
-                Log.i 'PrepareDependenciesHooker', "Error: ${syncIssue}"
-            }
-        }
-        Dependencies dependencies
-        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
-            ImmutableMap<String, String> buildMapping = Reflect.on('com.android.build.gradle.internal.ide.ModelBuilder')
-                    .call('computeBuildMapping', project.gradle)
-                    .get()
-            dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, buildMapping, consumer)
-        } else {
-            dependencies = new ArtifactDependencyGraph().createDependencies(scope, false, consumer)
-        }
+
+        Dependencies dependencies = ArtifactDependencyGraphCompat.createDependencies(project,scope)
 
         dependencies.libraries.each {
             def mavenCoordinates = it.resolvedCoordinates
@@ -136,6 +117,7 @@ class PrepareDependenciesHooker extends GradleTaskHooker<AppPreBuildTask> {
         vaContext.retainedAarLibs = retainedAarLibs
         mark()
     }
+
 
     void checkDependencies() {
         ArrayList<DependenceInfo> allRetainedDependencies = new ArrayList<>()

@@ -1,17 +1,16 @@
 package com.didi.virtualapk
 
+
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
-import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources
+import com.didi.virtualapk.support.ArtifactDependencyGraphCompat
+import com.didi.virtualapk.support.ResolvedArtifactCompat
 import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
-import com.didi.virtualapk.utils.Reflect
-import com.google.common.collect.ImmutableMap
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ComponentIdentifier
@@ -36,13 +35,13 @@ public class VAHostPlugin implements Plugin<Project> {
 
         this.project = project
 
-        Build.initGradleVersion(project)
-
         //The target project must be a android application module
         if (!project.plugins.hasPlugin('com.android.application')) {
             Log.e(TAG, "application required!")
             return
         }
+
+        Log.i(TAG, "android gradle plugin version is " + Build.AGP_VERSION)
 
         vaHostDir = new File(project.getBuildDir(), "VAHost")
 
@@ -91,28 +90,20 @@ public class VAHostPlugin implements Plugin<Project> {
             FileUtil.saveFile(vaHostDir, "versions", {
                 List<String> deps = new ArrayList<String>()
                 Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
-                Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts
-                if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_1_X)) {
-                    ImmutableMap<String, String> buildMapping = Reflect.on('com.android.build.gradle.internal.ide.ModelBuilder')
-                            .call('computeBuildMapping', project.gradle)
-                            .get()
-                    compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
-                            applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null, buildMapping)
-                } else {
-                    compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
-                            applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null)
-                }
+                Set compileArtifacts = ArtifactDependencyGraphCompat.getAllArtifacts(project, applicationVariant)
 
-                compileArtifacts.each { ArtifactDependencyGraph.HashableResolvedArtifactResult artifact ->
-                    ComponentIdentifier id = artifact.id.componentIdentifier
+                compileArtifacts.each { artifact ->
+                    // artifact 在 3.3 以上是 com.android.build.gradle.internal.ide.dependencies.ResolvedArtifact
+                    // artifact 在 3.3 以下是 org.gradle.api.artifacts.result.ResolvedArtifactResult
+                    ComponentIdentifier id = ResolvedArtifactCompat.getComponentIdentifier(artifact)
                     if (id instanceof ProjectComponentIdentifier) {
-                        deps.add("${id.projectPath.replace(':', '')}:${ArtifactDependencyGraph.getVariant(artifact)}:unspecified ${artifact.file.length()}")
-
+                        deps.add("${id.projectPath.replace(':', '')}" +
+                                ":${ResolvedArtifactCompat.getVariantName(artifact)}" +
+                                ":unspecified ${getArtifactFileLength(artifact)}")
                     } else if (id instanceof ModuleComponentIdentifier) {
-                        deps.add("${id.group}:${id.module}:${id.version} ${artifact.file.length()}")
-
+                        deps.add("${id.group}:${id.module}:${id.version} ${getArtifactFileLength(artifact)}")
                     } else {
-                        deps.add("${artifact.id.displayName.replace(':', '')}:unspecified:unspecified ${artifact.file.length()}")
+//                        deps.add("${id.displayName.replace(':', '')}:unspecified:unspecified ${getArtifactFileLength(artifact)}")
                     }
                 }
 
@@ -121,6 +112,10 @@ public class VAHostPlugin implements Plugin<Project> {
             })
         }
 
+    }
+
+    private long getArtifactFileLength(artifact){
+        return ResolvedArtifactCompat.getFile(artifact).length()
     }
 
     /**
