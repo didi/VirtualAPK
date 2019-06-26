@@ -9,7 +9,7 @@ final class ScopeCompat {
 
 
     def static getArtifact(Project project, String name) {
-        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_2_X)) {
+        if (Build.V3_2_OR_LATER) {
             return Reflect.on("com.android.build.gradle.internal.scope.InternalArtifactType")
                     .field(name).get()
         } else {
@@ -20,7 +20,7 @@ final class ScopeCompat {
 
 
     def static getArtifactFile(VariantScope scope, Project project, def artifact) {
-        if (Build.isSupportVersion(project, Build.VERSION_CODE.V3_2_X)) {
+        if (Build.V3_2_OR_LATER) {
             return scope.artifacts.getFinalArtifactFiles(artifact)
         } else {
             return scope.getOutput(artifact)

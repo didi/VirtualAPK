@@ -6,6 +6,7 @@ import com.android.builder.model.AndroidLibrary
 import com.android.utils.FileUtils
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
+import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.utils.Log
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
@@ -98,10 +99,22 @@ class AarDependenceInfo extends DependenceInfo {
      * @return package name of this library
      */
     public String getPackage() {
-        File manifest = getFile(library.manifest, 'manifests', 'full', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
+        File manifest = getLibManifestFile()
         Log.i 'AarDependenceInfo', "Found [${library.resolvedCoordinates}]'s manifest file: ${manifest}"
         def xmlManifest = new XmlParser().parse(manifest)
         return xmlManifest.@package
+    }
+
+    File getLibManifestFile() {
+        if (Build.V3_3_OR_LATER) {
+            return getFile(library.manifest, 'library_manifest', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
+        } else if (Build.V3_2_OR_LATER) {
+            return getFile(library.manifest, 'merged_manifests',library.projectVariant,
+                    "process${library.projectVariant.capitalize()}Manifest","merged",
+                    SdkConstants.ANDROID_MANIFEST_XML)
+        } else {
+            return getFile(library.manifest, 'manifests', 'full', library.projectVariant, SdkConstants.ANDROID_MANIFEST_XML)
+        }
     }
 
     File getIntermediatesDir() {

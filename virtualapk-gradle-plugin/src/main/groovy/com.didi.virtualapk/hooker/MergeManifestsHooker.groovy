@@ -1,7 +1,7 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.tasks.MergeManifests
+import com.android.build.gradle.tasks.ManifestProcessorTask
 import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.collector.dependence.DependenceInfo
 import com.didi.virtualapk.support.ScopeCompat
@@ -24,7 +24,7 @@ import java.util.function.Predicate
  *
  * @author zhengtao
  */
-class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
+class MergeManifestsHooker extends GradleTaskHooker<ManifestProcessorTask> {
 
     public static final String ANDROID_NAMESPACE = 'http://schemas.android.com/apk/res/android'
 
@@ -38,9 +38,9 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
     }
 
     @Override
-    void beforeTaskExecute(MergeManifests task) {
+    void beforeTaskExecute(ManifestProcessorTask task) {
 
-        def stripAarNames = vaContext.stripDependencies.
+        Set<String> stripAarNames = vaContext.stripDependencies.
                 findAll {
                     it.dependenceType == DependenceInfo.DependenceType.AAR
                 }.
@@ -57,9 +57,9 @@ class MergeManifestsHooker extends GradleTaskHooker<MergeManifests> {
      * Filter specific attributes from <application /> element after MergeManifests task executed
      */
     @Override
-    void afterTaskExecute(MergeManifests task) {
+    void afterTaskExecute(ManifestProcessorTask task) {
         def MERGED_MANIFESTS = ScopeCompat.getArtifact(project, "MERGED_MANIFESTS")
-        if (Build.isSupportVersion(project,Build.VERSION_CODE.V3_1_X)) {
+        if (Build.V3_1_OR_LATER) {
             File outputFile = (Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
                     .call('from', MERGED_MANIFESTS, ScopeCompat.getArtifactFile(scope, project, MERGED_MANIFESTS))
                     .call('element', variantData.outputScope.mainSplit))
