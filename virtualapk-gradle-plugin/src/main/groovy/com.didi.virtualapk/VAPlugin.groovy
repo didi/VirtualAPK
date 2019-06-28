@@ -5,7 +5,6 @@ import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.didi.virtualapk.hooker.*
-import com.didi.virtualapk.os.Build
 import com.didi.virtualapk.transform.StripClassAndResTransform
 import com.didi.virtualapk.utils.FileBinaryCategory
 import com.didi.virtualapk.utils.Log
@@ -228,11 +227,8 @@ class VAPlugin extends BasePlugin {
 
         AppPlugin appPlugin = project.plugins.findPlugin(AppPlugin)
         ProjectOptions projectOptions = Reflect.on(appPlugin).field('projectOptions').get()
-        // 330 此处已经无效了，永远为 true
-        if (!Build.isSupportVersion(Build.VERSION_CODE.V3_3_X)){
-            if (projectOptions.get(BooleanOption.ENABLE_DEX_ARCHIVE)) {
-                throw new InvalidUserDataException("Can't using incremental dexing mode, please add 'android.useDexArchive=false' in gradle.properties of :${project.name}.")
-            }
+        if (projectOptions.get(BooleanOption.ENABLE_DEX_ARCHIVE)) {
+            throw new InvalidUserDataException("Can't using incremental dexing mode, please add 'android.useDexArchive=false' in gradle.properties of :${project.name}.")
         }
 //        project.ext.set('android.useDexArchive', false)
         
