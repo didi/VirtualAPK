@@ -26,6 +26,7 @@ import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -35,6 +36,7 @@ import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.utils.RunUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -205,6 +207,17 @@ public class RemoteContentProvider extends ContentProvider {
         ContentProvider provider = getContentProvider(uri);
         if (provider != null) {
             return provider.call(method, arg, extras);
+        }
+
+        return null;
+    }
+
+    @Override
+    public ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode) throws FileNotFoundException {
+        ContentProvider provider = getContentProvider(uri);
+        Uri pluginUri = Uri.parse(uri.getQueryParameter(KEY_URI));
+        if (provider != null) {
+            return provider.openFile(pluginUri, mode);
         }
 
         return null;
