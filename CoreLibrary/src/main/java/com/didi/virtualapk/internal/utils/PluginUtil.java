@@ -19,6 +19,7 @@ package com.didi.virtualapk.internal.utils;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
@@ -160,7 +161,23 @@ public class PluginUtil {
             final LoadedPlugin plugin = PluginManager.getInstance(activity).getLoadedPlugin(packageName);
             final Resources resources = plugin.getResources();
             if (resources != null) {
-                Reflector.with(base).field("mResources").set(resources);
+
+                // find the real mResource since maybe nested ContextWrapper
+                while (true) {
+                    try {
+                        Reflector reflectorResource = Reflector.with(base).field("mResources");
+                        // return if already hooked.
+                        if (reflectorResource.get() == resources) {
+                            return;
+                        }
+                        reflectorResource.set(resources);
+                        break;
+                    } catch (Exception e) {
+                        if (base instanceof ContextWrapper) {
+                            base = ((ContextWrapper) base).getBaseContext();
+                        }
+                    }
+                }
 
                 // copy theme
                 Resources.Theme theme = resources.newTheme();
