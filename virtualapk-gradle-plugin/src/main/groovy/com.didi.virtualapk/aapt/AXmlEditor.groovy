@@ -1,5 +1,8 @@
 package com.didi.virtualapk.aapt
 
+import com.didi.virtualapk.utils.Log
+import org.codehaus.groovy.runtime.InvokerHelper
+
 /**
  * Class to edit aapt-generated hex xml file
  */
@@ -27,8 +30,8 @@ public class AXmlEditor extends AssetEditor {
 
         def sp = readStringPool()
         byte[] targetBytes = [ // platformBuildVersionCode
-                'p',0,'l',0,'a',0,'t',0,'f',0,'o',0,'r',0,'m',0,'B',0,'u',0,'i',0,'l',0,'d',0,
-                'V',0,'e',0,'r',0,'s',0,'i',0,'o',0,'n',0,'C',0,'o',0,'d',0,'e',0 ]
+                               'p', 0, 'l', 0, 'a', 0, 't', 0, 'f', 0, 'o', 0, 'r', 0, 'm', 0, 'B', 0, 'u', 0, 'i', 0, 'l', 0, 'd', 0,
+                               'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 'C', 0, 'o', 0, 'd', 0, 'e', 0]
         int targetIndex = -1
         final int N = sp.stringCount
         for (int i = 0; i < N; i++) {
@@ -88,10 +91,13 @@ public class AXmlEditor extends AssetEditor {
     }
 
     def setPackageId(final int pp, final Map idMaps) {
+        Log.i("VAPlugin", "setPackageId");
         def xml = readChunkHeader()
         if (xml.type != ResType.RES_XML_TYPE) {
             return false
         }
+
+        Log.i("VAPlugin", "pp = " + Integer.toHexString(pp) + ", size = " + xml.size + ", idMaps = " + formatMap(idMaps))
 
         setPackageIdRecursive(pp, idMaps, xml.size)
         close()
@@ -99,28 +105,24 @@ public class AXmlEditor extends AssetEditor {
     }
 
     private def setPackageIdRecursive(final int pp, final Map idMaps, final long size) {
-        if (tellp() >= size) {
-            return
-        }
-
-        def chunk = readChunkHeader()
-        if (chunk.type == ResType.RES_XML_RESOURCE_MAP_TYPE) {
-            def idCount = (chunk.size - chunk.headerSize) / 4
-            for (int i = 0; i < idCount; i++) {
-                checkToRewritePackageId(pp, idMaps)
+        while (tellp() < size) {
+            def chunk = readChunkHeader()
+            if (chunk.type == ResType.RES_XML_RESOURCE_MAP_TYPE) {
+                def idCount = (chunk.size - chunk.headerSize) / 4
+                for (int i = 0; i < idCount; i++) {
+                    checkToRewritePackageId(pp, idMaps)
+                }
+            } else if (chunk.type == ResType.RES_XML_START_ELEMENT_TYPE) {
+                // Parse element, reset package id
+                def node = readNode()
+                for (int i = 0; i < node.attributeCount; i++) {
+                    skip(ATTR_BEFORE_ID_LENGTH)
+                    checkToRewritePackageId(pp, idMaps)
+                }
+            } else {
+                skip(chunk.size - CHUNK_HEADER_SIZE)
             }
-        } else if (chunk.type == ResType.RES_XML_START_ELEMENT_TYPE) {
-            // Parse element, reset package id
-            def node = readNode()
-            for (int i = 0; i < node.attributeCount; i++) {
-                skip(ATTR_BEFORE_ID_LENGTH)
-                checkToRewritePackageId(pp, idMaps)
-            }
-        } else {
-            skip(chunk.size - CHUNK_HEADER_SIZE)
         }
-
-        setPackageIdRecursive(pp, idMaps, size)
     }
 
     /** Read struct ResXMLTree_node and ResXMLTree_attrExt */
@@ -138,8 +140,8 @@ public class AXmlEditor extends AssetEditor {
     def createAndroidManefist(Map options) {
         def size = 0
         def xml = [
-            header: [type: ResType.RES_XML_TYPE, headerSize: 8, size: size],
-            stringPool: []
+                header    : [type: ResType.RES_XML_TYPE, headerSize: 8, size: size],
+                stringPool: []
         ]
     }
 
@@ -260,5 +262,43 @@ public class AXmlEditor extends AssetEditor {
         at.name = readInt()
         at.rawValue = readInt()
         at.typedValue = readResValue()
+    }
+
+    private static String formatMap(Map map) {
+        boolean verbose = false
+        int maxSize = -1
+        if (map.isEmpty()) {
+            return "[:]";
+        } else {
+            StringBuilder buffer = new StringBuilder("[");
+            boolean first = true;
+            Iterator var5 = map.entrySet().iterator();
+
+            while (var5.hasNext()) {
+                Object o = var5.next();
+                if (first) {
+                    first = false;
+                } else {
+                    buffer.append(", ");
+                }
+
+                if (maxSize != -1 && buffer.length() > maxSize) {
+                    buffer.append("...");
+                    break;
+                }
+
+                Map.Entry entry = (Map.Entry) o;
+                buffer.append(InvokerHelper.format(Integer.toHexString(entry.getKey()), verbose));
+                buffer.append(":");
+                if (entry.getValue() == map) {
+                    buffer.append("(this Map)");
+                } else {
+                    buffer.append(InvokerHelper.format(Integer.toHexString(entry.getValue()), verbose, InvokerHelper.sizeLeft(maxSize, buffer)));
+                }
+            }
+
+            buffer.append("]");
+            return buffer.toString();
+        }
     }
 }

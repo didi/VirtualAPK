@@ -2,6 +2,7 @@ package com.didi.virtualapk.aapt
 
 import com.didi.virtualapk.collector.res.ResourceEntry
 import com.didi.virtualapk.collector.res.StyleableEntry
+import com.didi.virtualapk.utils.Log
 import com.google.common.collect.ListMultimap
 import com.google.common.io.Files
 import groovy.io.FileType
@@ -39,6 +40,7 @@ public class Aapt {
      * @param idMaps
      */
     void filterPackage(final List<?> retainedTypes, final List<?> retainedStyleables, final int pp, final Map<?, ?> idMaps, final Map<?, ?> libRefTable, final Set<String> outUpdatedResources) {
+        Log.i("VAPlugin", "filterPackage");
         final File arscFile = new File(this.assetDir, RESOURCES_ARSC)
         final def arscEditor = new ArscEditor(arscFile, toolsRevision)
 
@@ -100,6 +102,7 @@ public class Aapt {
      * Reset package id for *.xml
      */
     private static void resetAllXmlPackageId(final File dir, final int pp, final Map<?, ?> idMaps, final Set<String> outUpdatedResources) {
+        Log.i("VAPlugin", "resetAllXmlPackageId");
         int len = dir.canonicalPath.length() + 1 // bypass '/'
         def isWindows = (File.separator != ENTRY_SEPARATOR)
 
@@ -148,7 +151,7 @@ public class Aapt {
 
             pw.println "    public static final class styleable {"
             styleables.each { styleable ->
-                    pw.println "        public static final ${styleable.valueType} ${styleable.name} = ${styleable.value};"
+                pw.println "        public static final ${styleable.valueType} ${styleable.name} = ${styleable.value};"
             }
             pw.println "    }"
             pw.println "}"

@@ -42,6 +42,7 @@ public abstract class BasePlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        Log.i "VAPlugin", "apply"
         this.project = project
 
         AppPlugin appPlugin = project.plugins.findPlugin(AppPlugin)

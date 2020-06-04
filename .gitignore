@@ -40,3 +40,5 @@ buildNumber.properties
 
 local.properties
 buildSrc
+
+PluginTT/*

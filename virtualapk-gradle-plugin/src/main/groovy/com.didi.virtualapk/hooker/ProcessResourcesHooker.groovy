@@ -60,7 +60,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
      */
     @Override
     void afterTaskExecute(ProcessAndroidResources par) {
-
+        Log.i("VAPlugin", "afterTaskExecute")
         def PROCESSED_RES = ScopeCompat.getArtifact(project, "PROCESSED_RES")
         if (Build.V3_1_OR_LATER) {
             File outputFile = Reflect.on('com.android.build.gradle.internal.scope.ExistingBuildElements')
@@ -77,6 +77,7 @@ class ProcessResourcesHooker extends GradleTaskHooker<ProcessAndroidResources> {
     }
 
     void repackage(ProcessAndroidResources par, File apFile) {
+        Log.i("VAPlugin", "repackage")
         def resourcesDir = new File(apFile.parentFile, Files.getNameWithoutExtension(apFile.name))
 
         /*
