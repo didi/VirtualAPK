@@ -92,11 +92,27 @@ public abstract class BasePlugin implements Plugin<Project> {
                     }
 
                     TaskFactoryCompat.configure(taskFactory, "assemblePlugin", action)
+                } else if ('debug' == variant.buildType.name) {
+                    String variantAssembleTaskName = variant.variantData.scope.getTaskName('assemble', 'Plugin')
+                    def final variantPluginTaskName = variantAssembleTaskName
+                    final def configAction = new AssemblePlugin.ConfigAction(project, variant)
+
+                    TaskFactoryCompat.add(taskFactory, variantPluginTaskName, AssemblePlugin, configAction)
+
+                    Action action = new Action<Task>() {
+                        @Override
+                        void execute(Task task) {
+                            task.dependsOn(variantPluginTaskName)
+                        }
+                    }
+
+                    TaskFactoryCompat.configure(taskFactory, "assembleDebugPlugin", action)
                 }
             }
         }
 
         project.task('assemblePlugin', dependsOn: "assembleRelease", group: 'build', description: 'Build plugin apk')
+        project.task('assembleDebugPlugin', dependsOn: "assembleDebug", group: 'build', description: 'Build debug plugin apk')
     }
 
     String createPluginTaskName(String name) {
@@ -113,11 +129,13 @@ public abstract class BasePlugin implements Plugin<Project> {
         def startParameter = project.gradle.startParameter
         def targetTasks = startParameter.taskNames
 
-        def pluginTasks = ['assemblePlugin', 'assembleBeijingPlugin', 'assembleShanghaiPlugin'] as List<String>
+        def pluginTasks = ['assemblePlugin', 'assembleBeijingPlugin', 'assembleShanghaiPlugin', 'assembleDebugPlugin'] as List<String>
 
         if (!appPlugin.variantManager.productFlavors.isEmpty()) {
             appPlugin.variantManager.variantScopes
-                    .findAll { it.variantConfiguration.buildType.name == "release" }
+                    .findAll {
+                        it.variantConfiguration.buildType.name == "release" || it.variantConfiguration.buildType.name == 'debug'
+                    }
                     .forEach { VariantScope scope -> addTaskToListForScope(scope, pluginTasks) }
         }
 
