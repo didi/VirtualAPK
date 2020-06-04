@@ -44,9 +44,8 @@ dependencies {
     compile 'commons-codec:commons-codec:1.6'
     compile 'org.ow2.asm:asm:4.0'
     compile 'org.javassist:javassist:3.18.2-GA'
-    compile 'com.android.tools.build:gradle:3.0.0'
+    compile 'com.android.tools.build:gradle:3.2.0'
 }
 
 
-
-apply from: 'upload.gradle'
+apply from: 'gradle-mvn-push.gradle'

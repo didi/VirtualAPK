@@ -4,10 +4,14 @@ buildscript {
     repositories {
         jcenter()
         google()
+        maven {
+            url 'http://maven.p1staff.com/repository/maven-public/'
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
-        classpath 'com.didi.virtualapk:gradle:0.9.8.6.2-dev'
+        classpath 'com.android.tools.build:gradle:3.2.0'
+//        classpath 'com.didi.virtualapk:gradle:0.9.8.6.2-dev'
+        classpath 'com.tantan.library.virtualapk.xinyuan:gradle:0.0.1-SNAPSHOT'
 
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
@@ -29,6 +33,9 @@ allprojects {
         mavenCentral()
         jcenter()
         google()
+        maven {
+            url 'http://maven.p1staff.com/repository/maven-public/'
+        }
     }
 }
 
