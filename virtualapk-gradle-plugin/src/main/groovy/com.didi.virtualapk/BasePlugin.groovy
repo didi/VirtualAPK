@@ -113,7 +113,7 @@ public abstract class BasePlugin implements Plugin<Project> {
         def startParameter = project.gradle.startParameter
         def targetTasks = startParameter.taskNames
 
-        def pluginTasks = ['assemblePlugin'] as List<String>
+        def pluginTasks = ['assemblePlugin', 'assembleBeijingPlugin', 'assembleShanghaiPlugin'] as List<String>
 
         if (!appPlugin.variantManager.productFlavors.isEmpty()) {
             appPlugin.variantManager.variantScopes
@@ -121,9 +121,9 @@ public abstract class BasePlugin implements Plugin<Project> {
                     .forEach { VariantScope scope -> addTaskToListForScope(scope, pluginTasks) }
         }
 
-//        pluginTasks.each {
-//            Log.i 'VAPlugin', "pluginTask: ${it}"
-//        }
+        pluginTasks.each {
+            Log.i 'VAPlugin', "pluginTask: ${it}"
+        }
 
         boolean isBuildingPlugin = false
         NameMatcher nameMatcher = new NameMatcher()
@@ -132,7 +132,7 @@ public abstract class BasePlugin implements Plugin<Project> {
             String task = index >= 0 ? it.substring(index + 1) : it
             String taskName = nameMatcher.find(task, pluginTasks)
             if (taskName != null) {
-//                Log.i 'VAPlugin', "Found task name '${taskName}' by given name '${it}'"
+                Log.i 'VAPlugin', "Found task name '${taskName}' by given name '${it}'"
                 isBuildingPlugin = true
                 return false
             }
