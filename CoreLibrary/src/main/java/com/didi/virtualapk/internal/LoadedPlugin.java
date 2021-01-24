@@ -521,6 +521,15 @@ public class LoadedPlugin {
 
         protected PackageManager mHostPackageManager = mHostContext.getPackageManager();
 
+        public Intent buildRequestPermissionsIntent(@NonNull String[] permissions) {
+            try {
+                return Reflector.on(PackageManager.class).bind(mHostPackageManager).method("buildRequestPermissionsIntent", String[].class).call((Object)permissions);
+            } catch (Reflector.ReflectedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    
         @Override
         public PackageInfo getPackageInfo(String packageName, int flags) throws NameNotFoundException {
 
