@@ -2,10 +2,10 @@ package com.didi.virtualapk
 
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
-import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
+//import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.transforms.ProGuardTransform
+//import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.didi.virtualapk.utils.FileUtil
 import com.didi.virtualapk.utils.Log
@@ -85,24 +85,24 @@ public class VAHostPlugin implements Plugin<Project> {
 
             FileUtil.saveFile(vaHostDir, "versions", {
                 List<String> deps = new ArrayList<String>()
-                Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
-                Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
-                        applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null)
+//                Log.i TAG, "Used compileClasspath: ${applicationVariant.name}"
+//                Set<ArtifactDependencyGraph.HashableResolvedArtifactResult> compileArtifacts = ArtifactDependencyGraph.getAllArtifacts(
+//                        applicationVariant.variantData.scope, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, null)
+//
+//                compileArtifacts.each { ArtifactDependencyGraph.HashableResolvedArtifactResult artifact ->
+//                    ComponentIdentifier id = artifact.id.componentIdentifier
+//                    if (id instanceof ProjectComponentIdentifier) {
+//                        deps.add("${id.projectPath.replace(':', '')}:${ArtifactDependencyGraph.getVariant(artifact)}:unspecified ${artifact.file.length()}")
+//
+//                    } else if (id instanceof ModuleComponentIdentifier) {
+//                        deps.add("${id.group}:${id.module}:${id.version} ${artifact.file.length()}")
+//
+//                    } else {
+//                        deps.add("${artifact.id.displayName.replace(':', '')}:unspecified:unspecified ${artifact.file.length()}")
+//                    }
+//                }
 
-                compileArtifacts.each { ArtifactDependencyGraph.HashableResolvedArtifactResult artifact ->
-                    ComponentIdentifier id = artifact.id.componentIdentifier
-                    if (id instanceof ProjectComponentIdentifier) {
-                        deps.add("${id.projectPath.replace(':', '')}:${ArtifactDependencyGraph.getVariant(artifact)}:unspecified ${artifact.file.length()}")
-
-                    } else if (id instanceof ModuleComponentIdentifier) {
-                        deps.add("${id.group}:${id.module}:${id.version} ${artifact.file.length()}")
-
-                    } else {
-                        deps.add("${artifact.id.displayName.replace(':', '')}:unspecified:unspecified ${artifact.file.length()}")
-                    }
-                }
-
-                Collections.sort(deps)
+//                Collections.sort(deps)
                 return deps
             })
         }
@@ -130,19 +130,20 @@ public class VAHostPlugin implements Plugin<Project> {
      */
     def backupProguardMapping(ApplicationVariant applicationVariant) {
 
-        if (applicationVariant.buildType.minifyEnabled) {
-            TransformTask proguardTask = project.tasks["transformClassesAndResourcesWithProguardFor${applicationVariant.name.capitalize()}"]
-
-            ProGuardTransform proguardTransform = proguardTask.transform
-            File mappingFile = proguardTransform.mappingFile
-
-            proguardTask.doLast {
-                project.copy {
-                    from mappingFile
-                    into vaHostDir
-                }
-            }
-        }
+        // gradle升级后这个task找不到
+//        if (applicationVariant.buildType.minifyEnabled) {
+//            TransformTask proguardTask = project.tasks["transformClassesAndResourcesWithProguardFor${applicationVariant.name.capitalize()}"]
+//
+//            ProGuardTransform proguardTransform = proguardTask.transform
+//            File mappingFile = proguardTransform.mappingFile
+//
+//            proguardTask.doLast {
+//                project.copy {
+//                    from mappingFile
+//                    into vaHostDir
+//                }
+//            }
+//        }
 
     }
 

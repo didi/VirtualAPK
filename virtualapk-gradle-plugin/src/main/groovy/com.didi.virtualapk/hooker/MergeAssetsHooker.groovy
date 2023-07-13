@@ -2,7 +2,8 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.tasks.MergeSourceSetFolders
-import com.android.ide.common.res2.AssetSet
+//import com.android.ide.common.res2.AssetSet
+import com.android.ide.common.resources.AssetSet
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import com.didi.virtualapk.utils.Log
 import com.didi.virtualapk.utils.Reflect

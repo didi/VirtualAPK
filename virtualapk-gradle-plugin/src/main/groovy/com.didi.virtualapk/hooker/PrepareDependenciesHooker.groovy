@@ -1,7 +1,9 @@
 package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
+import com.android.build.gradle.internal.ide.dependencies.ArtifactDependencyGraph
+
+//import com.android.build.gradle.internal.ide.ArtifactDependencyGraph
 import com.android.build.gradle.internal.tasks.AppPreBuildTask
 import com.android.builder.model.Dependencies
 import com.android.builder.model.SyncIssue

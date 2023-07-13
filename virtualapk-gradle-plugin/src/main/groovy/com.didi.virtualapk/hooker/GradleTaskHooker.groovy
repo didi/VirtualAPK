@@ -1,7 +1,8 @@
 package com.didi.virtualapk.hooker
 
+import com.android.build.api.variant.impl.ApplicationVariantImpl
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.api.ApplicationVariantImpl
+//import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.didi.virtualapk.VAExtention
@@ -45,11 +46,13 @@ public abstract class GradleTaskHooker<T extends Task> {
     }
 
     public BaseVariantData getVariantData() {
-        return ((ApplicationVariantImpl) this.apkVariant).variantData
+        return ((ApplicationVariantImpl) this.apkVariant)
+                .variantData
     }
 
     public VariantScope getScope() {
-        return variantData.scope
+//        return variantData.scope
+       return ((ApplicationVariantImpl)this.apkVariant).variantScope
     }
 
     public VAExtention getVirtualApk() {

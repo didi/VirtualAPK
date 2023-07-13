@@ -4,9 +4,9 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk
-        android:minSdkVersion="15"
-        android:targetSdkVersion="19" />
+<!--    <uses-sdk-->
+<!--        android:minSdkVersion="15"-->
+<!--        android:targetSdkVersion="19" />-->
 
     <permission
         android:name="com.didi.virtualapk.demo.permission.ACCESS_BOOK_SERVICE"

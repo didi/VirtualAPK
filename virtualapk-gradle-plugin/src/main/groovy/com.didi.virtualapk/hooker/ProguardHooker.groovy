@@ -2,7 +2,7 @@ package com.didi.virtualapk.hooker
 
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.android.build.gradle.internal.transforms.ProGuardTransform
+//import com.android.build.gradle.internal.transforms.ProGuardTransform
 import com.didi.virtualapk.collector.dependence.AarDependenceInfo
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
@@ -39,7 +39,7 @@ class ProguardHooker extends GradleTaskHooker<TransformTask> {
     @Override
     void beforeTaskExecute(TransformTask task) {
 
-        def proguardTransform = task.transform as ProGuardTransform
+//        def proguardTransform = task.transform as ProGuardTransform
 
         File applyMappingFile;
 

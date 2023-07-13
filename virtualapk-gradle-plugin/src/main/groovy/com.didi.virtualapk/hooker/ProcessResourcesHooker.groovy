@@ -3,7 +3,7 @@ package com.didi.virtualapk.hooker
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.scope.TaskOutputHolder
+//import com.android.build.gradle.internal.scope.TaskOutputHolder
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.sdklib.BuildToolInfo
 import com.didi.virtualapk.aapt.Aapt

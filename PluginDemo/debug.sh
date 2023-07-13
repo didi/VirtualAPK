@@ -1,0 +1,1 @@
+./gradlew assemblePlugin -Dorg.gradle.debug=true --no-daemon

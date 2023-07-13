@@ -1,12 +1,22 @@
 package com.didi.virtualapk
 
+import com.android.build.api.variant.ApplicationVariant
+import com.android.build.api.variant.impl.ApplicationVariantImpl
 import com.android.build.gradle.AppExtension
-import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.internal.TaskContainerAdaptor
-import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
+
+//import com.android.build.gradle.internal.TaskContainerAdaptor
+
+//import com.android.build.gradle.AppPlugin
+//import com.android.build.gradle.internal.TaskContainerAdaptor
+//import com.android.build.gradle.internal.TaskFactory
+//import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.internal.plugins.AppPlugin
+import com.android.build.gradle.internal.tasks.factory.TaskFactory
+import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
+import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.VariantConfiguration
+//import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
 import com.didi.virtualapk.tasks.AssemblePlugin
 import com.didi.virtualapk.utils.Log
@@ -46,9 +56,7 @@ public abstract class BasePlugin implements Plugin<Project> {
         this.project = project
 
         AppPlugin appPlugin = project.plugins.findPlugin(AppPlugin)
-
         Reflect reflect = Reflect.on(appPlugin.variantManager)
-
         VariantFactory variantFactory = Proxy.newProxyInstance(this.class.classLoader, [VariantFactory.class] as Class[],
                 new InvocationHandler() {
                     Object delegate = reflect.get('variantFactory')
@@ -69,20 +77,26 @@ public abstract class BasePlugin implements Plugin<Project> {
 
         project.extensions.create('virtualApk', VAExtention)
 
-        taskFactory = new TaskContainerAdaptor(project.tasks)
+        taskFactory = new TaskFactoryImpl(project.tasks)
         project.afterEvaluate {
 
             if (!checkVariantFactoryInvoked) {
                 throw new RuntimeException('Evaluating VirtualApk\'s configurations has failed!')
             }
 
-            android.applicationVariants.each { ApplicationVariantImpl variant ->
+            android.applicationVariants.all {  variant ->
+//                if('debug' == variant.buildType.name) {
+//                    com.android.build.gradle.internal.variant.ApplicationVariantData variantData = variant.variantData
+////                     def scope = variantData.scope
+//                }
                 if ('release' == variant.buildType.name) {
-                    String variantAssembleTaskName = variant.variantData.scope.getTaskName('assemble', 'Plugin')
+                    com.android.build.gradle.internal.variant.ApplicationVariantData variantData = variant.variantData
+                    String variantAssembleTaskName = variant.getTaskName('assemble', 'Plugin')
                     def final variantPluginTaskName = createPluginTaskName(variantAssembleTaskName)
                     final def configAction = new AssemblePlugin.ConfigAction(project, variant)
 
-                    taskFactory.create(variantPluginTaskName, AssemblePlugin, configAction)
+//                    taskFactory.create(variantPluginTaskName, AssemblePlugin, configAction)
+                    taskFactory.register(variantPluginTaskName, AssemblePlugin, configAction)
 
                     taskFactory.named("assemblePlugin", new Action<Task>() {
                         @Override
@@ -90,6 +104,7 @@ public abstract class BasePlugin implements Plugin<Project> {
                             task.dependsOn(variantPluginTaskName)
                         }
                     })
+
                 }
             }
         }
@@ -109,18 +124,19 @@ public abstract class BasePlugin implements Plugin<Project> {
         def targetTasks = startParameter.taskNames
 
         def pluginTasks = ['assemblePlugin'] as List<String>
-
-        appPlugin.variantManager.buildTypes.each {
+        appPlugin.variantInputModel.buildTypes.each{
+//        appPlugin.variantManager.buildTypes.each {
             def buildType = it.value.buildType
             if ('release' != buildType.name) {
                 return
             }
-            if (appPlugin.variantManager.productFlavors.isEmpty()) {
+            if (appPlugin.variantInputModel.productFlavors.isEmpty()) {
                 return
             }
 
-            appPlugin.variantManager.productFlavors.each {
-                String variantName = VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+            appPlugin.variantInputModel.productFlavors.each {
+//                String variantName = VariantConfiguration.computeFullName(it.key, buildType, VariantType.DEFAULT, null)
+                String variantName = "myg"+buildType.name +"-"+it.key
                 def variantPluginTaskName = createPluginTaskName("assemble${variantName.capitalize()}Plugin".toString())
                 pluginTasks.add(variantPluginTaskName)
             }

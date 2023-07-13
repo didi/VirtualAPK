@@ -3,10 +3,14 @@ buildscript {
     repositories {
         google()
         jcenter()
+        maven {
+            url "../virtualapk-gradle-plugin/build/repo"
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
-        classpath 'com.didi.virtualapk:gradle:0.9.8.4'
+        classpath 'com.android.tools.build:gradle:4.2.0'
+        classpath 'com.didi.virtualapk:gradle:0.0.1-SNAPSHOT'
+//        classpath 'com.didi.virtualapk:gradle:0.9.8.4'
     }
 }
 
